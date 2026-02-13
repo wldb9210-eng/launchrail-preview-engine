@@ -184,15 +184,95 @@ class PreviewEngine:
         '''
 
     def _generate_html(self) -> str:
-        """완성된 HTML 프리뷰 생성"""
+        """완성된 HTML 프리뷰 생성 - 5섹션 구조"""
         jde_events, joe_data = self._get_events()
         system_name = self.design_data.get('system_name', 'JJO System')
         version = self.design_data.get('version', '1.0')
 
-        event_cards = '\n'.join([
-            self._render_event_card(event, i)
-            for i, event in enumerate(jde_events)
-        ])
+        # 용어 매핑
+        stage_mapping = {
+            1: "왜 이렇게 판단했나요?",
+            2: "반드시 지킨 기준",
+            3: "위험 감지 및 보호",
+            4: "과거 기록",
+            5: "판단 근거 로그",
+            6: "운영 효율 상태",
+            7: "앞으로 바뀔 수 있는 영역"
+        }
+
+        # ① Global Status 추출
+        global_status = "OK"
+        global_message = "오늘 전체 운영 상태는 정상입니다"
+        warning_count = sum(1 for e in jde_events if e.get('safety_trigger') or e.get('human_gate'))
+
+        if warning_count > 0:
+            global_status = "Warning"
+            global_message = f"주의가 필요한 항목이 {warning_count}개 있습니다"
+
+        # ② Today's One Thing 추출 (첫 번째 action 타입)
+        one_thing = next((e for e in jde_events if e.get('type') == 'action'), None)
+        one_thing_html = ""
+        if one_thing:
+            one_thing_html = f'''
+            <div class="one-thing-card">
+                <h2>오늘 할 일</h2>
+                <div class="one-thing-content">
+                    <h3>{one_thing.get('title', '')}</h3>
+                    <p>{one_thing.get('description', '')}</p>
+                </div>
+                <button class="btn-action">{one_thing.get('action_label', '실행하기')}</button>
+            </div>
+            '''
+
+        # ③ Signal Cards (처음 4개 이벤트)
+        signal_cards_html = []
+        for i, event in enumerate(jde_events[:4]):
+            status = "normal"
+            if event.get('safety_trigger'):
+                status = "danger"
+            elif event.get('human_gate'):
+                status = "warning"
+
+            signal_cards_html.append(f'''
+            <div class="signal-card signal-{status}">
+                <div class="signal-icon">{event.get('icon', '📊')}</div>
+                <div class="signal-headline">{event.get('title', '')}</div>
+                <div class="signal-value">{event.get('value', '')}</div>
+                <div class="signal-progress">
+                    <div class="progress-bar-inner" style="width: {event.get('progress', 0)}%"></div>
+                </div>
+            </div>
+            ''')
+
+        # ④ Recent History
+        history_html = []
+        for i, event in enumerate(jde_events[-5:]):
+            history_html.append(f'''
+            <tr>
+                <td class="history-time">{event.get('time', '00:00')}</td>
+                <td class="history-activity">{event.get('title', '')}</td>
+                <td class="history-status">
+                    <span class="status-badge status-{event.get('status', 'normal')}">{event.get('status', 'OK')}</span>
+                </td>
+            </tr>
+            ''')
+
+        # ⑤ Reason/Coverage
+        reason_sections_html = []
+        for stage in range(1, 8):
+            stage_events = [e for e in jde_events if e.get('stage') == stage]
+            if stage_events:
+                section_title = stage_mapping.get(stage, f"Stage {stage}")
+                items = []
+                for e in stage_events:
+                    items.append(f'<li>{e.get("reasoning", e.get("description", ""))}</li>')
+
+                reason_sections_html.append(f'''
+                <div class="reason-section">
+                    <h4>{section_title}</h4>
+                    <ul>{''.join(items)}</ul>
+                </div>
+                ''')
 
         joe_panel = self._render_joe_panel(joe_data)
 
@@ -201,7 +281,7 @@ class PreviewEngine:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{system_name} - Preview</title>
+    <title>{system_name} - Launchrail Standard OS</title>
     <style>
         * {{
             margin: 0;
@@ -210,294 +290,407 @@ class PreviewEngine:
         }}
 
         body {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+            background: #f5f7fa;
             min-height: 100vh;
-            padding: 20px;
+            display: flex;
         }}
 
-        .container {{
-            max-width: 1200px;
-            margin: 0 auto;
+        /* 좌측 사이드바 */
+        .sidebar {{
+            width: 220px;
+            background: #2c3e50;
+            color: white;
+            padding: 30px 20px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 100;
         }}
 
-        header {{
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-bottom: 30px;
-        }}
-
-        h1 {{
-            color: #333;
-            font-size: 2.5em;
+        .sidebar h1 {{
+            font-size: 1.3em;
             margin-bottom: 10px;
         }}
 
-        .subtitle {{
-            color: #666;
-            font-size: 1.1em;
+        .sidebar .version {{
+            font-size: 0.85em;
+            color: #95a5a6;
+            margin-bottom: 30px;
         }}
 
-        .version {{
-            display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            margin-left: 10px;
+        .sidebar nav {{
+            margin-top: 30px;
         }}
 
-        .timeline {{
-            position: relative;
-            padding-left: 40px;
+        .sidebar nav a {{
+            display: block;
+            color: #ecf0f1;
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            transition: background 0.2s;
         }}
 
-        .timeline::before {{
-            content: '';
-            position: absolute;
-            left: 20px;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            background: rgba(255,255,255,0.3);
+        .sidebar nav a:hover {{
+            background: rgba(255,255,255,0.1);
         }}
 
-        .event-card {{
+        /* 메인 영역 */
+        .main-container {{
+            margin-left: 220px;
+            width: calc(100% - 220px);
+            display: flex;
+            flex-direction: column;
+        }}
+
+        /* 상단 헤더 */
+        .top-header {{
             background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            position: relative;
-            transition: all 0.3s ease;
-            opacity: 0.6;
-        }}
-
-        .event-card.active {{
-            opacity: 1;
-            transform: translateX(10px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }}
-
-        .event-card.completed {{
-            opacity: 0.5;
-            background: #f0f0f0;
-        }}
-
-        .event-card::before {{
-            content: '';
-            position: absolute;
-            left: -28px;
-            top: 30px;
-            width: 16px;
-            height: 16px;
-            background: white;
-            border: 3px solid #667eea;
-            border-radius: 50%;
-        }}
-
-        .event-card.active::before {{
-            background: #667eea;
-            box-shadow: 0 0 0 6px rgba(102, 126, 234, 0.3);
-        }}
-
-        .event-card.completed::before {{
-            background: #4CAF50;
-            border-color: #4CAF50;
-        }}
-
-        .human-gate {{
-            border-left: 5px solid #ff9800;
-        }}
-
-        .safety-event {{
-            border-left: 5px solid #f44336;
-            background: #fff3f3;
-        }}
-
-        .card-header {{
+            padding: 20px 40px;
+            border-bottom: 1px solid #e1e8ed;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 15px;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 90;
         }}
 
-        .card-header h3 {{
-            color: #333;
-            font-size: 1.5em;
+        .search-box {{
+            flex: 1;
+            max-width: 500px;
+        }}
+
+        .search-box input {{
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 0.95em;
+        }}
+
+        .header-status {{
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
         }}
 
-        .event-number {{
-            display: inline-block;
-            background: #667eea;
-            color: white;
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            text-align: center;
-            line-height: 35px;
-            font-size: 0.8em;
+        .status-indicator {{
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
         }}
 
-        .badges {{
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
+        .status-ok {{
+            background: #d4edda;
+            color: #155724;
         }}
 
-        .badge {{
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 0.85em;
-            font-weight: bold;
-        }}
-
-        .badge-stage {{
-            background: #e3f2fd;
-            color: #1976d2;
-        }}
-
-        .badge-warning {{
+        .status-warning {{
             background: #fff3cd;
             color: #856404;
         }}
 
-        .badge-danger {{
+        .status-danger {{
             background: #f8d7da;
             color: #721c24;
         }}
 
-        .card-body {{
-            margin-bottom: 15px;
+        /* 메인 콘텐츠 */
+        .main-content {{
+            padding: 30px 40px;
+            flex: 1;
         }}
 
-        .description {{
+        /* ① Global Status Bar */
+        .global-status {{
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #28a745;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }}
+
+        .global-status.warning {{
+            border-left-color: #ffc107;
+        }}
+
+        .global-status.danger {{
+            border-left-color: #dc3545;
+        }}
+
+        .global-status h2 {{
+            font-size: 1.1em;
+            color: #333;
+            margin-bottom: 8px;
+        }}
+
+        .global-status .message {{
             color: #666;
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }}
-
-        .event-meta {{
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 5px;
-        }}
-
-        .meta-item {{
-            color: #555;
             font-size: 0.95em;
         }}
 
-        .card-footer {{
-            display: flex;
-            justify-content: flex-end;
-        }}
-
-        .btn {{
-            padding: 10px 25px;
-            border: none;
-            border-radius: 5px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }}
-
-        .btn-primary {{
-            background: #667eea;
-            color: white;
-        }}
-
-        .btn-primary:hover {{
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }}
-
-        .btn:disabled {{
-            background: #ccc;
-            cursor: not-allowed;
-        }}
-
-        .log-panel {{
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 350px;
-            max-height: 400px;
-            background: white;
+        /* ② Today's One Thing */
+        .one-thing-card {{
+            background: #FFF9E5;
+            padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+            border: 2px solid #f5e6a8;
+        }}
+
+        .one-thing-card h2 {{
+            font-size: 0.9em;
+            color: #856404;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }}
+
+        .one-thing-content h3 {{
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 10px;
+        }}
+
+        .one-thing-content p {{
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }}
+
+        .btn-action {{
+            background: #ffc107;
+            color: #333;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }}
+
+        .btn-action:hover {{
+            background: #e0a800;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }}
+
+        /* ③ Signal Cards - 4열 그리드 */
+        .signal-grid {{
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }}
+
+        .signal-card {{
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-left: 4px solid #28a745;
+        }}
+
+        .signal-card.signal-warning {{
+            border-left-color: #ffc107;
+        }}
+
+        .signal-card.signal-danger {{
+            border-left-color: #dc3545;
+        }}
+
+        .signal-icon {{
+            font-size: 2em;
+            margin-bottom: 10px;
+        }}
+
+        .signal-headline {{
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }}
+
+        .signal-value {{
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }}
+
+        .signal-progress {{
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
             overflow: hidden;
-            z-index: 1000;
         }}
 
-        .log-header {{
-            background: #333;
-            color: white;
-            padding: 15px;
-            font-weight: bold;
+        .progress-bar-inner {{
+            height: 100%;
+            background: #28a745;
+            transition: width 0.3s;
         }}
 
-        .log-body {{
-            padding: 15px;
-            max-height: 320px;
-            overflow-y: auto;
+        /* ④⑤ History + Reason 2:1 레이아웃 */
+        .bottom-grid {{
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 60px;
         }}
 
-        .log-entry {{
-            padding: 8px;
-            margin-bottom: 8px;
-            border-left: 3px solid #667eea;
+        /* ④ Recent History */
+        .history-panel {{
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }}
+
+        .history-panel h3 {{
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            color: #333;
+        }}
+
+        .history-table {{
+            width: 100%;
+            border-collapse: collapse;
+        }}
+
+        .history-table th {{
+            text-align: left;
+            padding: 12px;
             background: #f8f9fa;
+            color: #666;
+            font-weight: 600;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }}
+
+        .history-table td {{
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
             font-size: 0.9em;
         }}
 
-        .log-entry.success {{
-            border-left-color: #4CAF50;
-        }}
-
-        .log-entry.warning {{
-            border-left-color: #ff9800;
-        }}
-
-        .log-entry.error {{
-            border-left-color: #f44336;
-        }}
-
-        .log-timestamp {{
+        .history-time {{
             color: #999;
+            width: 80px;
+        }}
+
+        .history-activity {{
+            color: #333;
+        }}
+
+        .history-status {{
+            width: 100px;
+            text-align: right;
+        }}
+
+        .status-badge {{
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }}
+
+        .status-badge.status-normal {{
+            background: #d4edda;
+            color: #155724;
+        }}
+
+        .status-badge.status-warning {{
+            background: #fff3cd;
+            color: #856404;
+        }}
+
+        .status-badge.status-danger {{
+            background: #f8d7da;
+            color: #721c24;
+        }}
+
+        /* ⑤ Reason/Coverage */
+        .reason-panel {{
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            max-height: 600px;
+            overflow-y: auto;
+        }}
+
+        .reason-panel h3 {{
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            color: #333;
+        }}
+
+        .reason-disclaimer {{
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
             font-size: 0.85em;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            border-left: 3px solid #6c757d;
         }}
 
-        .progress-bar {{
+        .reason-section {{
+            margin-bottom: 20px;
+        }}
+
+        .reason-section h4 {{
+            font-size: 0.95em;
+            color: #495057;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }}
+
+        .reason-section ul {{
+            list-style: none;
+            padding-left: 0;
+        }}
+
+        .reason-section li {{
+            padding: 8px 0;
+            color: #666;
+            font-size: 0.9em;
+            line-height: 1.5;
+            border-bottom: 1px solid #f1f3f5;
+        }}
+
+        .reason-section li:last-child {{
+            border-bottom: none;
+        }}
+
+        /* 봉인 문구 */
+        .seal-notice {{
             position: fixed;
-            top: 0;
-            left: 0;
+            bottom: 0;
+            left: 220px;
             right: 0;
-            height: 4px;
-            background: rgba(0,0,0,0.1);
-            z-index: 1001;
+            background: #2c3e50;
+            color: white;
+            padding: 15px 40px;
+            text-align: center;
+            font-size: 0.85em;
+            z-index: 80;
+            border-top: 3px solid #ffc107;
         }}
 
-        .progress-fill {{
-            height: 100%;
-            background: #4CAF50;
-            transition: width 0.3s ease;
-            width: 0%;
-        }}
-
+        /* JOE 패널 (기존 유지) */
         .joe-toggle-btn {{
             position: fixed;
-            bottom: 440px;
+            bottom: 70px;
             right: 20px;
             background: #333;
             color: white;
@@ -520,7 +713,7 @@ class PreviewEngine:
         .joe-panel {{
             position: fixed;
             bottom: 20px;
-            right: 390px;
+            right: 20px;
             width: 400px;
             max-height: 500px;
             background: white;
@@ -616,145 +809,115 @@ class PreviewEngine:
             margin-bottom: 4px;
         }}
 
-        @media (max-width: 768px) {{
-            .log-panel {{
-                width: calc(100% - 40px);
-                bottom: 10px;
-                right: 20px;
-                left: 20px;
+        @media (max-width: 1200px) {{
+            .signal-grid {{
+                grid-template-columns: repeat(2, 1fr);
             }}
 
-            .joe-panel {{
-                width: calc(100% - 40px);
-                right: 20px;
-                left: 20px;
-                bottom: 430px;
-            }}
-
-            .joe-toggle-btn {{
-                bottom: auto;
-                top: 80px;
-                right: 20px;
+            .bottom-grid {{
+                grid-template-columns: 1fr;
             }}
         }}
     </style>
 </head>
 <body>
-    <div class="progress-bar">
-        <div class="progress-fill" id="progressFill"></div>
+    <!-- 좌측 사이드바 -->
+    <div class="sidebar">
+        <h1>{system_name}</h1>
+        <div class="version">v{version}</div>
+        <nav>
+            <a href="#dashboard">📊 Dashboard</a>
+            <a href="#signals">📡 Signals</a>
+            <a href="#history">🕐 History</a>
+            <a href="#settings">⚙️ Settings</a>
+        </nav>
     </div>
 
-    <div class="container">
-        <header>
-            <h1>
-                {system_name}
-                <span class="version">v{version}</span>
-            </h1>
-            <p class="subtitle">🎬 Interactive Preview - 운영자가 경험할 하루</p>
-        </header>
+    <!-- 메인 컨테이너 -->
+    <div class="main-container">
+        <!-- 상단 헤더 -->
+        <div class="top-header">
+            <div class="search-box">
+                <input type="text" placeholder="검색...">
+            </div>
+            <div class="header-status">
+                <span class="status-indicator status-{global_status.lower()}">{global_status}</span>
+            </div>
+        </div>
 
-        <div class="timeline" id="timeline">
-            {event_cards}
+        <!-- 메인 콘텐츠 -->
+        <div class="main-content">
+            <!-- ① Global Status Bar -->
+            <div class="global-status {global_status.lower()}">
+                <h2>전체 운영 상태</h2>
+                <div class="message">{global_message}</div>
+            </div>
+
+            <!-- ② Today's One Thing -->
+            {one_thing_html}
+
+            <!-- ③ Signal Cards -->
+            <div class="signal-grid">
+                {''.join(signal_cards_html)}
+            </div>
+
+            <!-- ④⑤ History + Reason -->
+            <div class="bottom-grid">
+                <!-- ④ Recent History -->
+                <div class="history-panel">
+                    <h3>최근 활동</h3>
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>시간</th>
+                                <th>활동</th>
+                                <th>상태</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {''.join(history_html)}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ⑤ Reason/Coverage -->
+                <div class="reason-panel">
+                    <h3>판단 근거</h3>
+                    <div class="reason-disclaimer">
+                        이 영역은 참고용 설명이며, 운영에 필요한 모든 판단은 상단 상태와 오늘 할 일에 이미 반영되어 있습니다.
+                    </div>
+                    {''.join(reason_sections_html)}
+                </div>
+            </div>
+        </div>
+
+        <!-- 봉인 문구 -->
+        <div class="seal-notice">
+            본 프리뷰 UI는 Launchrail Standard OS의 확정된 화면 사양이며, 시공 및 가격 산정의 기준으로 사용됩니다.
         </div>
     </div>
 
+    <!-- JOE 패널 (Developer Mode) -->
     <button class="joe-toggle-btn" id="joeToggleBtn" onclick="toggleJoePanel()">
         🧠 Developer / Auditor Mode
     </button>
 
     {joe_panel}
 
-    <div class="log-panel">
-        <div class="log-header">📋 Timeline Log</div>
-        <div class="log-body" id="logBody"></div>
-    </div>
-
     <script>
-        let currentEventIndex = -1;
-        const totalEvents = {len(jde_events)};
-
         function toggleJoePanel() {{
             const panel = document.getElementById('joePanel');
             panel.classList.toggle('visible');
         }}
 
-        function addLog(message, type = 'info') {{
-            const logBody = document.getElementById('logBody');
-            const timestamp = new Date().toLocaleTimeString();
-            const entry = document.createElement('div');
-            entry.className = `log-entry ${{type}}`;
-            entry.innerHTML = `
-                <div class="log-timestamp">${{timestamp}}</div>
-                <div>${{message}}</div>
-            `;
-            logBody.insertBefore(entry, logBody.firstChild);
+        // ?dev=true 또는 Cmd+Shift+J로 JOE 패널 토글
+        if (window.location.search.includes('dev=true')) {{
+            document.getElementById('joePanel').classList.add('visible');
         }}
 
-        function updateProgress() {{
-            const progress = ((currentEventIndex + 1) / totalEvents) * 100;
-            document.getElementById('progressFill').style.width = progress + '%';
-        }}
-
-        function processEvent(index) {{
-            const cards = document.querySelectorAll('.event-card');
-            const card = cards[index];
-            const eventType = card.dataset.type;
-            const title = card.querySelector('h3').textContent.trim();
-
-            // 이전 카드 완료 표시
-            if (currentEventIndex >= 0) {{
-                cards[currentEventIndex].classList.remove('active');
-                cards[currentEventIndex].classList.add('completed');
-            }}
-
-            // 현재 카드 활성화
-            currentEventIndex = index;
-            card.classList.add('active');
-            card.scrollIntoView({{ behavior: 'smooth', block: 'center' }});
-
-            // 버튼 비활성화
-            const button = card.querySelector('.btn');
-            button.disabled = true;
-            button.textContent = '✓ Completed';
-
-            // 로그 추가
-            if (card.classList.contains('safety-event')) {{
-                addLog(`🛑 Safety Event Triggered: ${{title}}`, 'error');
-            }} else if (card.classList.contains('human-gate')) {{
-                addLog(`👤 Human Gate: ${{title}}`, 'warning');
-            }} else {{
-                addLog(`✓ Event Executed: ${{title}}`, 'success');
-            }}
-
-            // 진행률 업데이트
-            updateProgress();
-
-            // 다음 이벤트 활성화
-            if (index + 1 < totalEvents) {{
-                setTimeout(() => {{
-                    cards[index + 1].style.opacity = '1';
-                }}, 300);
-            }} else {{
-                addLog('🎉 All events completed!', 'success');
-            }}
-        }}
-
-        // 초기화: 첫 번째 이벤트만 활성화
-        document.addEventListener('DOMContentLoaded', () => {{
-            const cards = document.querySelectorAll('.event-card');
-            if (cards.length > 0) {{
-                cards[0].style.opacity = '1';
-                addLog('Preview session started', 'info');
-            }}
-        }});
-
-        // 키보드 단축키
         document.addEventListener('keydown', (e) => {{
-            if (e.key === 'ArrowRight' || e.key === ' ') {{
-                const cards = document.querySelectorAll('.event-card');
-                if (currentEventIndex + 1 < totalEvents) {{
-                    processEvent(currentEventIndex + 1);
-                }}
+            if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'J') {{
+                toggleJoePanel();
                 e.preventDefault();
             }}
         }});
