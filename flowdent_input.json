@@ -1,0 +1,78 @@
+{
+  "system_name": "FlowDent Appointment & Recall OS",
+  "version": "1.0",
+  "preview_directive": {
+    "events": [
+      {
+        "title": "Today Appointments",
+        "value": 42,
+        "stage": 6,
+        "icon": "📅",
+        "description": "42 appointments scheduled for today",
+        "progress": 85,
+        "time": "08:00",
+        "status": "normal",
+        "reasoning": "All 42 appointments synced and verified from booking system."
+      },
+      {
+        "title": "Call back 8 high-risk no-show patients before 17:00",
+        "value": 8,
+        "stage": 3,
+        "type": "action",
+        "icon": "⚠️",
+        "human_gate": true,
+        "description": "8 patients flagged as high no-show probability",
+        "action_label": "지금 확인",
+        "progress": 40,
+        "time": "10:12",
+        "status": "warning",
+        "reasoning": "Predictive no-show scoring active. Human confirmation required before cancellation."
+      },
+      {
+        "title": "Pending Insurance Claims",
+        "value": 5,
+        "stage": 2,
+        "icon": "📋",
+        "human_gate": true,
+        "description": "5 insurance claims pending review",
+        "progress": 25,
+        "time": "09:30",
+        "status": "warning",
+        "reasoning": "Insurance processing delay contributing to operational risk."
+      },
+      {
+        "title": "Recall Queue (6M+)",
+        "value": 23,
+        "stage": 2,
+        "icon": "🔔",
+        "human_gate": true,
+        "description": "23 patients overdue for 6-month recall",
+        "progress": 60,
+        "time": "09:00",
+        "status": "warning",
+        "reasoning": "High recall backlog contributing to elevated operational risk."
+      },
+      {
+        "title": "42 appointments synced from booking system",
+        "time": "08:55",
+        "stage": 5,
+        "status": "normal",
+        "reasoning": "Booking system sync completed successfully."
+      },
+      {
+        "title": "8 patients flagged as high no-show probability",
+        "time": "10:12",
+        "stage": 3,
+        "status": "warning",
+        "reasoning": "Operational risk elevated due to high recall backlog and insurance delay."
+      },
+      {
+        "title": "3 recall reminders sent",
+        "time": "11:40",
+        "stage": 6,
+        "status": "normal",
+        "reasoning": "Automated recall reminders dispatched on schedule."
+      }
+    ]
+  }
+}
