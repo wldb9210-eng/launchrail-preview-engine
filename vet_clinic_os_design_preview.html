@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동물병원 예약 관리 OS - Launchrail Standard OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        body {
+            background: #F5F7FA;
+            overflow: hidden;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid #E5E7EB;
+        }
+        .main-content {
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        /* JOE 패널 */
+        .joe-toggle-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1f2937;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 25px;
+            font-size: 0.8em;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1002;
+            transition: all 0.2s;
+        }
+        .joe-toggle-btn:hover {
+            background: #374151;
+            transform: translateY(-2px);
+        }
+        .joe-panel {
+            position: fixed;
+            bottom: 60px;
+            right: 20px;
+            width: 380px;
+            max-height: 480px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            z-index: 999;
+            display: none;
+        }
+        .joe-panel.visible {
+            display: block;
+        }
+        .joe-header {
+            background: #1f2937;
+            color: white;
+            padding: 16px 20px;
+        }
+        .joe-header h3 {
+            margin-bottom: 8px;
+            font-size: 1em;
+            font-weight: 700;
+        }
+        .joe-disclaimer {
+            font-size: 0.75em;
+            color: #d1d5db;
+            line-height: 1.4;
+        }
+        .joe-body {
+            padding: 16px;
+            max-height: 360px;
+            overflow-y: auto;
+        }
+        .joe-section {
+            margin-bottom: 16px;
+        }
+        .joe-section h4 {
+            color: #1f2937;
+            font-size: 0.9em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .joe-empty {
+            color: #9ca3af;
+            font-style: italic;
+            font-size: 0.8em;
+        }
+        .joe-item {
+            background: #f9fafb;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border-left: 3px solid #9ca3af;
+        }
+        .joe-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .joe-stage-badge {
+            background: #6b7280;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+        .joe-description {
+            color: #6b7280;
+            font-size: 0.8em;
+            line-height: 1.5;
+            margin-bottom: 6px;
+        }
+        .joe-meta {
+            font-size: 0.75em;
+            color: #6b7280;
+        }
+        .joe-meta div {
+            margin-bottom: 3px;
+        }
+    </style>
+</head>
+<body class="flex">
+
+    <!-- 좌측 사이드바 -->
+    <div class="sidebar h-screen p-5">
+        <div class="mb-6">
+            <h1 class="text-xl font-bold text-gray-900">동물병원 예약 관리 OS</h1>
+            <p class="text-[10px] text-gray-500 mt-0.5">v1.0.0</p>
+        </div>
+        <nav class="space-y-1">
+            <a href="#" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-900 font-medium text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                Dashboard
+            </a>
+        </nav>
+    </div>
+
+    <!-- 메인 컨텐츠 -->
+    <div class="flex-1 main-content">
+
+        <!-- 상단 헤더 -->
+        <div class="bg-white border-b border-gray-200 px-6 py-3 sticky top-0 z-10">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-xl font-bold text-gray-900">Dashboard</h2>
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
+                        <span class="text-xs text-gray-600">운영 주의 · 4건</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="text" placeholder="Search..." class="px-3 py-1.5 bg-gray-50 rounded-lg text-xs border-0 w-48">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6">
+
+            <!-- ② Today's One Thing -->
+            
+            <div class="card p-5 mb-5" style="background: #FFF9E5;">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-amber-200 rounded-xl flex items-center justify-center text-2xl">📋</div>
+                        <div>
+                            <p class="text-amber-700 text-[10px] font-semibold uppercase tracking-wider mb-0.5">오늘 꼭 해야 할 일</p>
+                            <h3 class="text-gray-900 text-lg font-bold">오늘의 예약 현황 로드</h3>
+                        </div>
+                    </div>
+                    <button class="bg-amber-400 hover:bg-amber-500 text-gray-900 px-5 py-2 rounded-full font-semibold text-xs transition">
+                        예약 현황 확인하기 →
+                    </button>
+                </div>
+            </div>
+            
+
+            <!-- ③ Signal Cards -->
+            <div class="grid grid-cols-4 gap-4 mb-5">
+                
+                <div class="card p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-lg">
+                            📋
+                        </div>
+                        <span class="text-[10px] font-semibold text-gray-500 uppercase">정상</span>
+                    </div>
+                    <h4 class="text-gray-900 font-bold text-sm mb-1">오늘의 예약 현황 로드</h4>
+                    <div class="flex items-end gap-1 mb-2">
+                        <span class="text-3xl font-bold text-gray-900">18건</span>
+                    </div>
+                    <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                        <div class="h-full bg-emerald-500" style="width: 0%"></div>
+                    </div>
+                    <p class="text-[10px] text-gray-600">수의사가 시스템에 로그인하여 오늘 예약된 환자 목록을 확인합니다. 긴급 케이스와 정기 검진이 구분되어 표시됩니다.</p>
+                </div>
+            
+                <div class="card p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center text-lg">
+                            🚨
+                        </div>
+                        <span class="text-[10px] font-semibold text-gray-500 uppercase">주의</span>
+                    </div>
+                    <h4 class="text-gray-900 font-bold text-sm mb-1">긴급 환자 접수 알림</h4>
+                    <div class="flex items-end gap-1 mb-2">
+                        <span class="text-3xl font-bold text-gray-900">긴급 1건</span>
+                    </div>
+                    <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                        <div class="h-full bg-amber-500" style="width: 100%"></div>
+                    </div>
+                    <p class="text-[10px] text-gray-600">골든 리트리버(3세)가 구토·무기력 증상으로 긴급 내원했습니다. 기존 예약 환자와의 시간 충돌 가능성을 알려줍니다.</p>
+                </div>
+            
+                <div class="card p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-lg">
+                            💉
+                        </div>
+                        <span class="text-[10px] font-semibold text-gray-500 uppercase">정상</span>
+                    </div>
+                    <h4 class="text-gray-900 font-bold text-sm mb-1">예방접종 스케줄 확인</h4>
+                    <div class="flex items-end gap-1 mb-2">
+                        <span class="text-3xl font-bold text-gray-900">4마리</span>
+                    </div>
+                    <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                        <div class="h-full bg-emerald-500" style="width: 75%"></div>
+                    </div>
+                    <p class="text-[10px] text-gray-600">오늘 예방접종 예정 환자 4마리의 접종 이력과 다음 접종 시기를 정리합니다.</p>
+                </div>
+            
+                <div class="card p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-lg">
+                            ⚕️
+                        </div>
+                        <span class="text-[10px] font-semibold text-gray-500 uppercase">위험</span>
+                    </div>
+                    <h4 class="text-gray-900 font-bold text-sm mb-1">수술 전 검사 결과 검토</h4>
+                    <div class="flex items-end gap-1 mb-2">
+                        <span class="text-3xl font-bold text-gray-900">이상 1건</span>
+                    </div>
+                    <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                        <div class="h-full bg-red-500" style="width: 60%"></div>
+                    </div>
+                    <p class="text-[10px] text-gray-600">오후 중성화 수술 예정인 환자의 혈액검사·영상검사 결과를 정리합니다. 이상 수치가 감지되었습니다.</p>
+                </div>
+            
+            </div>
+
+            <!-- ④⑤ History + Reason -->
+            <div class="grid grid-cols-3 gap-4">
+
+                <!-- ④ Recent History -->
+                <div class="col-span-2 card p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2">
+                            <span>📜</span> 최근 활동 기록
+                        </h3>
+                    </div>
+                    <div class="space-y-0">
+                        
+                        <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                            <div class="flex items-center gap-3">
+                                <span class="text-[10px] text-gray-500 font-mono w-12">13:00</span>
+                                <span class="text-xs font-medium text-gray-900">재고 부족 알림: 주요 의약품</span>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[10px] font-semibold">
+                                <span class="w-1 h-1 bg-amber-500 rounded-full"></span>
+                                주의
+                            </span>
+                        </div>
+            
+                        <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                            <div class="flex items-center gap-3">
+                                <span class="text-[10px] text-gray-500 font-mono w-12">13:30</span>
+                                <span class="text-xs font-medium text-gray-900">오후 진료 스케줄 정리</span>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-semibold">
+                                <span class="w-1 h-1 bg-emerald-500 rounded-full"></span>
+                                완료
+                            </span>
+                        </div>
+            
+                        <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                            <div class="flex items-center gap-3">
+                                <span class="text-[10px] text-gray-500 font-mono w-12">14:00</span>
+                                <span class="text-xs font-medium text-gray-900">당뇨 관리 재진: 혈당 추이 리포트</span>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-semibold">
+                                <span class="w-1 h-1 bg-emerald-500 rounded-full"></span>
+                                완료
+                            </span>
+                        </div>
+            
+                        <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                            <div class="flex items-center gap-3">
+                                <span class="text-[10px] text-gray-500 font-mono w-12">17:30</span>
+                                <span class="text-xs font-medium text-gray-900">Audit: 오늘 진료 기록 검증</span>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[10px] font-semibold">
+                                <span class="w-1 h-1 bg-amber-500 rounded-full"></span>
+                                주의
+                            </span>
+                        </div>
+            
+                        <div class="flex items-center justify-between py-2 ">
+                            <div class="flex items-center gap-3">
+                                <span class="text-[10px] text-gray-500 font-mono w-12">18:00</span>
+                                <span class="text-xs font-medium text-gray-900">하루 종료: 미처리 항목 및 내일 우선순위</span>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-semibold">
+                                <span class="w-1 h-1 bg-emerald-500 rounded-full"></span>
+                                완료
+                            </span>
+                        </div>
+            
+                    </div>
+                </div>
+
+                <!-- ⑤ Reason/Coverage -->
+                <div class="card p-4">
+                    <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <span>💡</span> 판단 근거
+                    </h3>
+                    <div class="bg-blue-50 rounded-lg p-3 mb-3">
+                        <p class="text-[10px] text-blue-900 leading-relaxed">
+                            운영에 필요한 모든 판단은 <strong>상단</strong>에 반영되어 있습니다.
+                        </p>
+                    </div>
+                    <div class="space-y-3">
+                        
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                <h4 class="font-semibold text-[11px] text-gray-900">왜 이렇게 판단했나요?</h4>
+                            </div>
+                            <ul class="text-[10px] text-gray-600 space-y-0.5 ml-3">
+                                <li>• 하루 시작 시 전체 예약을 시간순 정렬하여 제공. AI는 정렬만 하고 진료 순서 제안 안 함</li><li>• 긴급 환자의 기존 이력과 현재 예약 상황을 정리. 진료 우선순위 조정은 수의사가 결정</li><li>• 미응답 문의를 긴급도 기준으로 정렬. 응대 순서는 운영자가 결정</li><li>• 오후 진료 전 각 환자의 히스토리를 미리 정리하여 효율적 진료 준비 지원</li>
+                            </ul>
+                        </div>
+                
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                <h4 class="font-semibold text-[11px] text-gray-900">반드시 지킨 기준</h4>
+                            </div>
+                            <ul class="text-[10px] text-gray-600 space-y-0.5 ml-3">
+                                <li>• 접종 이력과 간격을 자동 확인하여 누락 방지. 접종 여부 최종 결정은 수의사가 환자 상태 확인 후 판단</li>
+                            </ul>
+                        </div>
+                
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <div class="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
+                                <h4 class="font-semibold text-[11px] text-gray-900">위험 감지 및 보호</h4>
+                            </div>
+                            <ul class="text-[10px] text-gray-600 space-y-0.5 ml-3">
+                                <li>• 수술 전 검사에서 이상 수치 발견. AI는 수치만 정리하고 수술 연기·진행 판단은 수의사가 결정</li>
+                            </ul>
+                        </div>
+                
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+                                <h4 class="font-semibold text-[11px] text-gray-900">과거 기록</h4>
+                            </div>
+                            <ul class="text-[10px] text-gray-600 space-y-0.5 ml-3">
+                                <li>• 만성질환 관리는 추이가 중요. AI는 데이터 정리만 하고, 인슐린 용량 조정은 수의사가 결정</li>
+                            </ul>
+                        </div>
+                
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <div class="w-1.5 h-1.5 bg-gray-500 rounded-full"></div>
+                                <h4 class="font-semibold text-[11px] text-gray-900">판단 근거 로그</h4>
+                            </div>
+                            <ul class="text-[10px] text-gray-600 space-y-0.5 ml-3">
+                                <li>• 진료 기록 누락은 의료 분쟁 리스크. 당일 완성을 위해 미완성 항목을 즉시 알림</li>
+                            </ul>
+                        </div>
+                
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <div class="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                                <h4 class="font-semibold text-[11px] text-gray-900">운영 효율 상태</h4>
+                            </div>
+                            <ul class="text-[10px] text-gray-600 space-y-0.5 ml-3">
+                                <li>• 재고 부족이 진료 공백으로 이어지지 않도록 사전 알림. 발주 시기와 수량은 운영자가 결정</li><li>• 미처리 항목이 누락되지 않도록 다음날 최상단 배치. 우선순위는 긴급도 기준 정렬</li>
+                            </ul>
+                        </div>
+                
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- 봉인 문구 -->
+        <div class="bg-white border-t border-gray-200 py-4 mt-6">
+            <div class="text-center">
+                <p class="text-[10px] text-gray-600">
+                    본 프리뷰 UI는 <strong class="text-gray-900">Launchrail Standard OS</strong>의 확정된 화면 사양이며, 시공 및 가격 산정의 기준으로 사용됩니다.
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JOE 패널 (Developer Mode) -->
+    <button class="joe-toggle-btn" id="joeToggleBtn" onclick="toggleJoePanel()">
+        🧠 Developer Mode
+    </button>
+
+    
+        <div class="joe-panel" id="joePanel">
+            <div class="joe-header">
+                <h3>🧠 JOE Layer (Developer / Auditor Mode)</h3>
+                <p class="joe-disclaimer">
+                    This panel shows system-level observation and evaluation.
+                    It does not affect operator decisions.
+                </p>
+            </div>
+            <div class="joe-body">
+                
+            <div class="joe-section">
+                <h4>📊 Observation (Stage 8)</h4>
+                
+                <div class="joe-item">
+                    <div class="joe-item-header">
+                        <strong>JOE: Observation - 운영 데이터 수집</strong>
+                        <span class="joe-stage-badge">Stage 8</span>
+                    </div>
+                    <p class="joe-description">비가시 레이어에서 오늘 운영 데이터를 수집합니다. 운영자 화면에 표시되지 않습니다.</p>
+                    <div class="joe-meta">
+                        <div><strong>Input:</strong> 운영자 로그인: 08:25 / 평균 진료 소요: 22분 / 긴급 대응 시간: 8분 / Safety 트리거: 1회(수술 전 검사)</div>
+                        <div><strong>Output:</strong> 관찰: 긴급 환자로 인해 오전 스케줄 평균 15분 지연 / 보호자 문의 미응답 평균 45분 / 차트 미완성률 14%</div>
+                        <div><strong>Reasoning:</strong> 병원 운영 패턴을 기록하여 시스템 개선 근거 확보</div>
+                    </div>
+                </div>
+                
+            </div>
+            
+                
+            <div class="joe-section">
+                <h4>📈 Evaluation (Stage 9)</h4>
+                
+                <div class="joe-item">
+                    <div class="joe-item-header">
+                        <strong>JOE: Evaluation - 패턴 분석</strong>
+                        <span class="joe-stage-badge">Stage 9</span>
+                    </div>
+                    <p class="joe-description">지난 30일간 운영 데이터 패턴을 기록합니다. 어떤 제안도 하지 않습니다.</p>
+                    <div class="joe-meta">
+                        <div><strong>Input:</strong> 30일간: 총 진료 420건 / 긴급 내원 18건 / Safety 트리거 5회 / 예약 노쇼 12건</div>
+                        <div><strong>Output:</strong> 패턴: 월요일 오전 긴급 내원 집중(38%) / 노쇼율 화·수 오후 높음 / 예방접종 집중 시기: 3~4월</div>
+                        <div><strong>Reasoning:</strong> 무엇이 자주 발생하는지 분류. 개선 제안은 절대 금지</div>
+                    </div>
+                </div>
+                
+            </div>
+            
+                
+            <div class="joe-section">
+                <h4>🔄 Evolution (Stage 10)</h4>
+                
+                <div class="joe-item">
+                    <div class="joe-item-header">
+                        <strong>JOE: Evolution - 개선 계획</strong>
+                        <span class="joe-stage-badge">Stage 10</span>
+                    </div>
+                    <p class="joe-description">수집된 패턴을 바탕으로 실험 가능한 개선 항목을 기록합니다.</p>
+                    <div class="joe-meta">
+                        <div><strong>Input:</strong> Observation/Evaluation 분석 데이터 / 운영자 피드백</div>
+                        <div><strong>Output:</strong> 실험 후보: 노쇼 알림 타이밍 조정(24h→48h 전), 보호자 문의 대시보드 UI 개선, 만성질환 추이 차트 시각화 강화</div>
+                        <div><strong>Reasoning:</strong> 시스템 개선은 핵심 철학을 변경하지 않는 범위 내에서만</div>
+                    </div>
+                </div>
+                
+            </div>
+            
+            </div>
+        </div>
+        
+
+    <script>
+        function toggleJoePanel() {
+            const panel = document.getElementById('joePanel');
+            panel.classList.toggle('visible');
+        }
+
+        if (window.location.search.includes('dev=true')) {
+            document.getElementById('joePanel').classList.add('visible');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'J') {
+                toggleJoePanel();
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>

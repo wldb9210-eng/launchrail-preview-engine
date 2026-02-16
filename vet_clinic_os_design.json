@@ -1,0 +1,288 @@
+{
+  "system_name": "동물병원 예약 관리 OS",
+  "version": "1.0.0",
+  "architecture": "JJO System (JDE 1-7, JOE 8-10)",
+  "design_philosophy": "AI 비결정 원칙 - 판단은 수의사, 정보는 AI",
+  "target_user": "동물병원 원장 또는 예약/운영 담당자",
+  "preview_directive": {
+    "scenario": "1인 운영자의 일반적인 하루 - 예약 접수부터 진료 완료까지 전체 환자 생명주기 관리",
+    "verdict": "PASS - Pre-built 반복판매 적합",
+    "key_principles": [
+      "가시성 우선: 오늘의 예약·진료·수술 현황을 한눈에 정렬",
+      "판단 이력 자산화: 왜 특정 진료 순서를 결정했는지 기록",
+      "AI 비결정 원칙: AI는 진료 순서 변경/약 처방/수술 결정 불가",
+      "리스크 기반 가격: Basic/Pro/Premium은 병원 규모와 방어 가능한 리스크 범위로 구분",
+      "안정성 우선: 환자 데이터 오류 발생 시 즉시 중단"
+    ],
+    "events": [
+      {
+        "title": "오늘의 예약 현황 로드",
+        "description": "수의사가 시스템에 로그인하여 오늘 예약된 환자 목록을 확인합니다. 긴급 케이스와 정기 검진이 구분되어 표시됩니다.",
+        "stage": 1,
+        "type": "action",
+        "layer": "Reasoning",
+        "icon": "📋",
+        "value": "18건",
+        "progress": 0,
+        "time": "08:30",
+        "status": "normal",
+        "action_label": "예약 현황 확인하기",
+        "input": "운영자 로그인 인증 정보",
+        "output": "오늘 예약: 정기 검진 8건, 예방접종 4건, 수술 2건, 긴급 내원 1건, 재진 3건",
+        "reasoning": "하루 시작 시 전체 예약을 시간순 정렬하여 제공. AI는 정렬만 하고 진료 순서 제안 안 함",
+        "constraint": "모든 예약은 '수의사 확인 필요' 상태로 표시",
+        "human_gate": false,
+        "safety_trigger": false
+      },
+      {
+        "title": "긴급 환자 접수 알림",
+        "description": "골든 리트리버(3세)가 구토·무기력 증상으로 긴급 내원했습니다. 기존 예약 환자와의 시간 충돌 가능성을 알려줍니다.",
+        "stage": 1,
+        "type": "emergency_alert",
+        "layer": "Reasoning",
+        "icon": "🚨",
+        "value": "긴급 1건",
+        "progress": 100,
+        "time": "09:15",
+        "status": "warning",
+        "input": "환자: 초코(골든 리트리버/3세) / 보호자: 김민수 / 증상: 구토 5회, 무기력, 식욕 부진 / 내원 시간: 09:15",
+        "output": "시간 충돌: 09:30 정기 검진(환자: 나비) 예약 존재 / 초코 과거 이력: 이물질 섭취 1회(2025-06), 예방접종 완료",
+        "reasoning": "긴급 환자의 기존 이력과 현재 예약 상황을 정리. 진료 우선순위 조정은 수의사가 결정",
+        "constraint": "AI는 진료 순서 자동 변경 금지. 긴급 여부 판단은 수의사만 가능",
+        "human_gate": true,
+        "safety_trigger": false,
+        "decision_required": "긴급 진료 여부, 기존 예약 조정 방법, 보호자 연락"
+      },
+      {
+        "title": "예방접종 스케줄 확인",
+        "description": "오늘 예방접종 예정 환자 4마리의 접종 이력과 다음 접종 시기를 정리합니다.",
+        "stage": 2,
+        "type": "vaccination_check",
+        "layer": "Constraint + Safety",
+        "icon": "💉",
+        "value": "4마리",
+        "progress": 75,
+        "time": "10:00",
+        "status": "normal",
+        "input": "접종 대상: 나비(고양이/1세), 뭉치(포메라니안/4개월), 호두(비글/2세), 콩이(먼치킨/3세)",
+        "output": "나비: FVRCP 2차 예정(정상) / 뭉치: DHPPL 1차(초회) / 호두: 광견병 추가접종(기한 내) / 콩이: FeLV 접종 이력 없음(보호자 상담 필요)",
+        "reasoning": "접종 이력과 간격을 자동 확인하여 누락 방지. 접종 여부 최종 결정은 수의사가 환자 상태 확인 후 판단",
+        "constraint": "AI는 접종 실행 지시 금지. 접종 간격 미달 시 경고만 표시",
+        "human_gate": false,
+        "safety_trigger": false
+      },
+      {
+        "title": "수술 전 검사 결과 검토",
+        "description": "오후 중성화 수술 예정인 환자의 혈액검사·영상검사 결과를 정리합니다. 이상 수치가 감지되었습니다.",
+        "stage": 3,
+        "type": "surgery_prep",
+        "layer": "Safety",
+        "icon": "⚕️",
+        "value": "이상 1건",
+        "progress": 60,
+        "time": "11:00",
+        "status": "danger",
+        "input": "환자: 보리(웰시코기/2세) / 수술: 중성화 / 혈액검사: ALT 180 U/L(정상 10-125) / 영상: 정상",
+        "output": "⚠️ ALT 수치 정상 범위 초과 — 간 기능 이상 가능성 / 수술 진행 여부 수의사 판단 필요",
+        "reasoning": "수술 전 검사에서 이상 수치 발견. AI는 수치만 정리하고 수술 연기·진행 판단은 수의사가 결정",
+        "constraint": "AI는 수술 진행/연기 권고 금지. 이상 수치 발견 시 반드시 수의사 확인 절차 강제",
+        "human_gate": true,
+        "safety_trigger": true,
+        "emergency_protocol": "수술 일정 동결, 수의사 즉시 검토 요청"
+      },
+      {
+        "title": "보호자 문의 응대 현황",
+        "description": "오전 중 접수된 보호자 전화·카카오톡 문의를 정리합니다. 미응답 건과 긴급 문의를 구분합니다.",
+        "stage": 1,
+        "type": "inquiry_management",
+        "layer": "Reasoning",
+        "input": "총 문의 12건 / 전화 5건, 카카오톡 7건 / 미응답: 3건 / 긴급 문의: 1건(약 부작용 의심)",
+        "output": "미응답 긴급: 보호자 이영희(환자: 두부) — 처방약 복용 후 구토 증상 문의 / 미응답 일반: 예약 변경 2건",
+        "reasoning": "미응답 문의를 긴급도 기준으로 정렬. 응대 순서는 운영자가 결정",
+        "constraint": "AI는 보호자에게 직접 응답 금지. 의료 상담은 수의사만 가능",
+        "human_gate": true,
+        "safety_trigger": false,
+        "time": "11:30",
+        "status": "warning",
+        "decision_required": "긴급 문의 콜백 여부, 예약 변경 승인"
+      },
+      {
+        "title": "재고 부족 알림: 주요 의약품",
+        "description": "자주 사용하는 의약품 중 재고가 기준치 이하로 떨어진 항목을 알립니다.",
+        "stage": 6,
+        "type": "inventory_alert",
+        "layer": "Routing",
+        "input": "전체 의약품 324종 / 재고 기준치 미달: 3종",
+        "output": "부족 항목: ① 세팔렉신(항생제) 잔여 5일분 ② 멜록시캄(소염제) 잔여 3일분 ③ 심장사상충 예방약 잔여 8일분",
+        "reasoning": "재고 부족이 진료 공백으로 이어지지 않도록 사전 알림. 발주 시기와 수량은 운영자가 결정",
+        "constraint": "AI는 자동 발주 금지. 대체 약품 제안도 금지 — 수의사가 직접 판단",
+        "human_gate": false,
+        "safety_trigger": false,
+        "time": "13:00",
+        "status": "warning"
+      },
+      {
+        "title": "오후 진료 스케줄 정리",
+        "description": "오후 예약 환자 목록과 각 환자의 주요 내원 사유를 정리합니다.",
+        "stage": 1,
+        "type": "schedule_review",
+        "layer": "Reasoning",
+        "input": "오후 예약: 6건 / 재진 3건, 정기 검진 2건, 피부질환 초진 1건",
+        "output": "14:00 재진(환자: 별이/당뇨 관리) / 14:30 재진(환자: 콩이/구내염) / 15:00 정기 검진(환자: 루이) / 15:30 피부 초진(환자: 모카) / 16:00 재진(환자: 하루/슬개골) / 16:30 정기 검진(환자: 찌니)",
+        "reasoning": "오후 진료 전 각 환자의 히스토리를 미리 정리하여 효율적 진료 준비 지원",
+        "constraint": "AI는 진료 시간 자동 조정 금지. 스케줄 변경은 운영자만 가능",
+        "human_gate": false,
+        "safety_trigger": false,
+        "time": "13:30",
+        "status": "normal"
+      },
+      {
+        "title": "당뇨 관리 재진: 혈당 추이 리포트",
+        "description": "재진 환자 별이(말티즈/9세)의 최근 3개월 혈당 추이와 인슐린 투여 이력을 정리합니다.",
+        "stage": 4,
+        "type": "chronic_management",
+        "layer": "Memory",
+        "input": "환자: 별이(말티즈/9세) / 진단: 당뇨(2025-08) / 현재 인슐린: 2U BID / 최근 혈당: 250→210→195mg/dL",
+        "output": "혈당 추이: 3개월간 하락 추세(양호) / 체중: 4.2→4.0kg(소폭 감소) / 보호자 보고: 음수량 감소, 활력 개선",
+        "reasoning": "만성질환 관리는 추이가 중요. AI는 데이터 정리만 하고, 인슐린 용량 조정은 수의사가 결정",
+        "constraint": "AI는 약물 용량 조정 제안 금지. 과거 이력을 시계열로만 제공",
+        "human_gate": true,
+        "safety_trigger": false,
+        "time": "14:00",
+        "status": "normal",
+        "decision_required": "인슐린 용량 유지/조정, 다음 검사 일정"
+      },
+      {
+        "title": "Audit: 오늘 진료 기록 검증",
+        "description": "오늘 완료된 진료의 차트 기록 완성도를 검증하고 누락 항목을 보고합니다.",
+        "stage": 5,
+        "type": "audit_check",
+        "layer": "Audit",
+        "input": "오늘 진료 완료: 14건 / 차트 기록률: 12건 완료, 2건 미완성",
+        "output": "미완성 차트: ① 초코(긴급 내원) — 퇴원 지시사항 미입력 ② 모카(피부 초진) — 검사 결과 첨부 누락",
+        "reasoning": "진료 기록 누락은 의료 분쟁 리스크. 당일 완성을 위해 미완성 항목을 즉시 알림",
+        "constraint": "미완성 차트는 24시간 이내 완료 필수. 반복 누락 시 운영자에게 재교육 알림",
+        "human_gate": false,
+        "safety_trigger": false,
+        "time": "17:30",
+        "status": "warning"
+      },
+      {
+        "title": "하루 종료: 미처리 항목 및 내일 우선순위",
+        "description": "오늘 처리하지 못한 항목을 내일 우선순위로 배치합니다.",
+        "stage": 6,
+        "type": "daily_summary",
+        "layer": "Routing",
+        "input": "오늘 총 항목: 25건 / 처리: 22건 / 보류: 3건(재고 발주, 미완성 차트 2건)",
+        "output": "내일 우선순위: #1 멜록시캄 발주(잔여 3일) #2 초코 차트 완성 #3 보리 수술 재일정 협의",
+        "reasoning": "미처리 항목이 누락되지 않도록 다음날 최상단 배치. 우선순위는 긴급도 기준 정렬",
+        "constraint": "보류 항목은 48시간 이상 방치 금지",
+        "human_gate": false,
+        "safety_trigger": false,
+        "time": "18:00",
+        "status": "normal"
+      },
+      {
+        "title": "JOE: Observation - 운영 데이터 수집",
+        "description": "비가시 레이어에서 오늘 운영 데이터를 수집합니다. 운영자 화면에 표시되지 않습니다.",
+        "stage": 8,
+        "type": "system_observation",
+        "layer": "JOE - Observation",
+        "input": "운영자 로그인: 08:25 / 평균 진료 소요: 22분 / 긴급 대응 시간: 8분 / Safety 트리거: 1회(수술 전 검사)",
+        "output": "관찰: 긴급 환자로 인해 오전 스케줄 평균 15분 지연 / 보호자 문의 미응답 평균 45분 / 차트 미완성률 14%",
+        "reasoning": "병원 운영 패턴을 기록하여 시스템 개선 근거 확보",
+        "constraint": "이 데이터는 운영자에게 제안이나 피드백으로 제공되지 않음",
+        "human_gate": false,
+        "safety_trigger": false,
+        "visibility": "개발자/감사자 전용"
+      },
+      {
+        "title": "JOE: Evaluation - 패턴 분석",
+        "description": "지난 30일간 운영 데이터 패턴을 기록합니다. 어떤 제안도 하지 않습니다.",
+        "stage": 9,
+        "type": "pattern_analysis",
+        "layer": "JOE - Evaluation",
+        "input": "30일간: 총 진료 420건 / 긴급 내원 18건 / Safety 트리거 5회 / 예약 노쇼 12건",
+        "output": "패턴: 월요일 오전 긴급 내원 집중(38%) / 노쇼율 화·수 오후 높음 / 예방접종 집중 시기: 3~4월",
+        "reasoning": "무엇이 자주 발생하는지 분류. 개선 제안은 절대 금지",
+        "constraint": "평가 결과를 운영자에게 알림/추천으로 전달 금지",
+        "human_gate": false,
+        "safety_trigger": false,
+        "visibility": "개발자/감사자 전용"
+      },
+      {
+        "title": "JOE: Evolution - 개선 계획",
+        "description": "수집된 패턴을 바탕으로 실험 가능한 개선 항목을 기록합니다.",
+        "stage": 10,
+        "type": "improvement_planning",
+        "layer": "JOE - Evolution",
+        "input": "Observation/Evaluation 분석 데이터 / 운영자 피드백",
+        "output": "실험 후보: 노쇼 알림 타이밍 조정(24h→48h 전), 보호자 문의 대시보드 UI 개선, 만성질환 추이 차트 시각화 강화",
+        "reasoning": "시스템 개선은 핵심 철학을 변경하지 않는 범위 내에서만",
+        "constraint": "v1.0 동결 영역 침범 금지. 실험은 승인 후 샌드박스에서만",
+        "human_gate": false,
+        "safety_trigger": false,
+        "visibility": "개발자 전용"
+      }
+    ],
+    "failure_scenarios": [
+      {
+        "name": "긴급 환자 폭주",
+        "description": "동시에 여러 긴급 환자가 내원하여 예약 환자 진료가 지연",
+        "system_response": "각 환자 상태와 대기 시간을 정리하되, 진료 우선순위는 수의사가 결정. 보호자 안내 메시지도 운영자가 작성"
+      },
+      {
+        "name": "의약품 리콜",
+        "description": "사용 중인 의약품에 리콜 발생",
+        "system_response": "해당 약품이 처방된 환자 목록을 즉시 정리. 보호자 연락과 대체 처방은 수의사만 결정"
+      },
+      {
+        "name": "환자 데이터 오류",
+        "description": "차트 정보와 검사 결과 간 불일치 감지",
+        "system_response": "즉시 해당 환자 관련 자동 알림 중단. 수의사가 원본 확인 후 수동 정정 완료까지 재개 금지"
+      }
+    ],
+    "human_intervention_moments": [
+      "긴급 환자 진료 우선순위 결정",
+      "수술 진행/연기 판단",
+      "약물 용량 조정",
+      "보호자 의료 상담 응대",
+      "의약품 발주 승인",
+      "진료비 감면/할인 결정"
+    ],
+    "human_ai_boundary": {
+      "ai_role": "예약 정리·검사 수치 정렬·재고 모니터링·이력 기록",
+      "human_role": "모든 의료 판단(진단, 처방, 수술), 보호자 소통, 비용 결정",
+      "ui_separation": "시스템 UI에는 'AI가 정리한 정보'와 '수의사 결정'이 명확히 구분 표시"
+    },
+    "pricing_tiers": {
+      "basic": "예약 관리·환자 이력 조회·기본 알림. 리스크: 재고 관리 수동",
+      "pro": "Basic + 재고 모니터링 + Health 추이 차트 + 보호자 문의 대시보드. 리스크: 데이터 연동 작업",
+      "premium": "Pro + 만성질환 추이 분석 + 고급 Audit + 다지점 통합. 리스크: 복잡도 증가"
+    },
+    "sealing_declaration": {
+      "v1_0_frozen": [
+        "예약→접수→진료→수술→퇴원 Reasoning 순서",
+        "AI 비결정 원칙 및 Human Gate 위치",
+        "JJO 7-Layer 정의",
+        "Safety Layer 검사 이상치 감지 및 즉시 중단 로직",
+        "Memory 구조 진료 기록 의무",
+        "모든 의료 판단의 '수의사 확인 필요' 플래그"
+      ],
+      "v1_x_experimental": [
+        "UI 시각화 방식",
+        "보호자 알림 채널",
+        "재고 감지 임계값 조정",
+        "외부 시스템 연동 API",
+        "리포트 레이아웃"
+      ],
+      "never_change": [
+        "AI 비결정 원칙",
+        "진료 기록 자산화",
+        "핵심 철학 (가시성·수의사 책임)",
+        "환자 데이터 오류 선언권",
+        "의료 분쟁 시 수의사 개입 의무"
+      ]
+    }
+  }
+}

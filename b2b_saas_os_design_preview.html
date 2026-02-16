@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B2B SaaS 구독 운영 OS - Launchrail Standard OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        body {
+            background: #F5F7FA;
+            overflow: hidden;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid #E5E7EB;
+        }
+        .main-content {
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        /* JOE 패널 */
+        .joe-toggle-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1f2937;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 25px;
+            font-size: 0.8em;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1002;
+            transition: all 0.2s;
+        }
+        .joe-toggle-btn:hover {
+            background: #374151;
+            transform: translateY(-2px);
+        }
+        .joe-panel {
+            position: fixed;
+            bottom: 60px;
+            right: 20px;
+            width: 380px;
+            max-height: 480px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            z-index: 999;
+            display: none;
+        }
+        .joe-panel.visible {
+            display: block;
+        }
+        .joe-header {
+            background: #1f2937;
+            color: white;
+            padding: 16px 20px;
+        }
+        .joe-header h3 {
+            margin-bottom: 8px;
+            font-size: 1em;
+            font-weight: 700;
+        }
+        .joe-disclaimer {
+            font-size: 0.75em;
+            color: #d1d5db;
+            line-height: 1.4;
+        }
+        .joe-body {
+            padding: 16px;
+            max-height: 360px;
+            overflow-y: auto;
+        }
+        .joe-section {
+            margin-bottom: 16px;
+        }
+        .joe-section h4 {
+            color: #1f2937;
+            font-size: 0.9em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .joe-empty {
+            color: #9ca3af;
+            font-style: italic;
+            font-size: 0.8em;
+        }
+        .joe-item {
+            background: #f9fafb;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border-left: 3px solid #9ca3af;
+        }
+        .joe-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .joe-stage-badge {
+            background: #6b7280;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+        .joe-description {
+            color: #6b7280;
+            font-size: 0.8em;
+            line-height: 1.5;
+            margin-bottom: 6px;
+        }
+        .joe-meta {
+            font-size: 0.75em;
+            color: #6b7280;
+        }
+        .joe-meta div {
+            margin-bottom: 3px;
+        }
+    </style>
+</head>
+<body class="flex">
+
+    <!-- 좌측 사이드바 -->
+    <div class="sidebar h-screen p-5">
+        <div class="mb-6">
+            <h1 class="text-xl font-bold text-gray-900">B2B SaaS 구독 운영 OS</h1>
+            <p class="text-[10px] text-gray-500 mt-0.5">v1.0.0</p>
+        </div>
+        <nav class="space-y-1">
+            <a href="#" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-900 font-medium text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                Dashboard
+            </a>
+        </nav>
+    </div>
+
+    <!-- 메인 컨텐츠 -->
+    <div class="flex-1 main-content">
+
+        <!-- 상단 헤더 -->
+        <div class="bg-white border-b border-gray-200 px-6 py-3 sticky top-0 z-10">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-xl font-bold text-gray-900">Dashboard</h2>
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
+                        <span class="text-xs text-gray-600">운영 주의 · 7건</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="text" placeholder="Search..." class="px-3 py-1.5 bg-gray-50 rounded-lg text-xs border-0 w-48">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6">
+
+            <!-- ② Today's One Thing -->
+            
+
+            <!-- ③ Signal Cards -->
+            <div class="grid grid-cols-4 gap-4 mb-5">
+                
+                <div class="card p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-lg">
+                            📊
+                        </div>
+                        <span class="text-[10px] font-semibold text-gray-500 uppercase">정상</span>
+                    </div>
+                    <h4 class="text-gray-900 font-bold text-sm mb-1">시스템 시작 및 오늘의 검토 항목 로드</h4>
+                    <div class="flex items-end gap-1 mb-2">
+                        <span class="text-3xl font-bold text-gray-900"></span>
+                    </div>
+                    <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                        <div class="h-full bg-emerald-500" style="width: 0%"></div>
+                    </div>
+                    <p class="text-[10px] text-gray-600">운영자가 시스템에 로그인하여 '오늘 리뷰해야 할 항목' 목록을 확인합니다. 모든 항목에는 '검토 필요' 표시가 있습니다.</p>
+                </div>
+            
+                <div class="card p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-lg">
+                            📊
+                        </div>
+                        <span class="text-[10px] font-semibold text-gray-500 uppercase">정상</span>
+                    </div>
+                    <h4 class="text-gray-900 font-bold text-sm mb-1">데이터 인입 및 정합성 검사</h4>
+                    <div class="flex items-end gap-1 mb-2">
+                        <span class="text-3xl font-bold text-gray-900"></span>
+                    </div>
+                    <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                        <div class="h-full bg-emerald-500" style="width: 0%"></div>
+                    </div>
+                    <p class="text-[10px] text-gray-600">시스템이 CRM, 결제 게이트웨이, 제품 사용 로그, 커뮤니케이션 시스템으로부터 데이터를 수집하고 Pre-check 모듈이 누락·모순·오염 여부를 검증합니다.</p>
+                </div>
+            
+                <div class="card p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center text-lg">
+                            📊
+                        </div>
+                        <span class="text-[10px] font-semibold text-gray-500 uppercase">주의</span>
+                    </div>
+                    <h4 class="text-gray-900 font-bold text-sm mb-1">영업 단계: 신규 계약 제안서 검토</h4>
+                    <div class="flex items-end gap-1 mb-2">
+                        <span class="text-3xl font-bold text-gray-900"></span>
+                    </div>
+                    <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                        <div class="h-full bg-amber-500" style="width: 0%"></div>
+                    </div>
+                    <p class="text-[10px] text-gray-600">새로운 고객사로부터 맞춤형 요금제 요청이 들어왔습니다. AI는 요구사항과 기존 패키지를 비교하여 차이점을 정렬하여 보여줍니다.</p>
+                </div>
+            
+                <div class="card p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center text-lg">
+                            📊
+                        </div>
+                        <span class="text-[10px] font-semibold text-gray-500 uppercase">주의</span>
+                    </div>
+                    <h4 class="text-gray-900 font-bold text-sm mb-1">온보딩 단계: 구현 진행 상태 및 지연 감지</h4>
+                    <div class="flex items-end gap-1 mb-2">
+                        <span class="text-3xl font-bold text-gray-900"></span>
+                    </div>
+                    <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                        <div class="h-full bg-amber-500" style="width: 0%"></div>
+                    </div>
+                    <p class="text-[10px] text-gray-600">신규 고객 XYZ Inc.의 온보딩이 예상보다 1주일 지연되고 있습니다. 데이터 마이그레이션과 시스템 연동 진행 상태를 요약하여 제공합니다.</p>
+                </div>
+            
+            </div>
+
+            <!-- ④⑤ History + Reason -->
+            <div class="grid grid-cols-3 gap-4">
+
+                <!-- ④ Recent History -->
+                <div class="col-span-2 card p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2">
+                            <span>📜</span> 최근 활동 기록
+                        </h3>
+                    </div>
+                    <div class="space-y-0">
+                        
+                        <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                            <div class="flex items-center gap-3">
+                                <span class="text-[10px] text-gray-500 font-mono w-12">00:00</span>
+                                <span class="text-xs font-medium text-gray-900">Safety 트리거: 데이터 오염 감지</span>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-semibold">
+                                <span class="w-1 h-1 bg-emerald-500 rounded-full"></span>
+                                완료
+                            </span>
+                        </div>
+            
+                        <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                            <div class="flex items-center gap-3">
+                                <span class="text-[10px] text-gray-500 font-mono w-12">00:00</span>
+                                <span class="text-xs font-medium text-gray-900">이탈 단계: 해지 요청 검토</span>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-semibold">
+                                <span class="w-1 h-1 bg-emerald-500 rounded-full"></span>
+                                완료
+                            </span>
+                        </div>
+            
+                        <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                            <div class="flex items-center gap-3">
+                                <span class="text-[10px] text-gray-500 font-mono w-12">00:00</span>
+                                <span class="text-xs font-medium text-gray-900">Audit: 일일 결정 로그 검증</span>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-semibold">
+                                <span class="w-1 h-1 bg-emerald-500 rounded-full"></span>
+                                완료
+                            </span>
+                        </div>
+            
+                        <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                            <div class="flex items-center gap-3">
+                                <span class="text-[10px] text-gray-500 font-mono w-12">00:00</span>
+                                <span class="text-xs font-medium text-gray-900">Memory: 판단 이력 요약 및 자산화</span>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-semibold">
+                                <span class="w-1 h-1 bg-emerald-500 rounded-full"></span>
+                                완료
+                            </span>
+                        </div>
+            
+                        <div class="flex items-center justify-between py-2 ">
+                            <div class="flex items-center gap-3">
+                                <span class="text-[10px] text-gray-500 font-mono w-12">00:00</span>
+                                <span class="text-xs font-medium text-gray-900">하루 종료: 미처리 항목 및 내일 우선순위</span>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-semibold">
+                                <span class="w-1 h-1 bg-emerald-500 rounded-full"></span>
+                                완료
+                            </span>
+                        </div>
+            
+                    </div>
+                </div>
+
+                <!-- ⑤ Reason/Coverage -->
+                <div class="card p-4">
+                    <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <span>💡</span> 판단 근거
+                    </h3>
+                    <div class="bg-blue-50 rounded-lg p-3 mb-3">
+                        <p class="text-[10px] text-blue-900 leading-relaxed">
+                            운영에 필요한 모든 판단은 <strong>상단</strong>에 반영되어 있습니다.
+                        </p>
+                    </div>
+                    <div class="space-y-3">
+                        
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                <h4 class="font-semibold text-[11px] text-gray-900">왜 이렇게 판단했나요?</h4>
+                            </div>
+                            <ul class="text-[10px] text-gray-600 space-y-0.5 ml-3">
+                                <li>• 하루 시작 시 우선순위 파악을 위해 전체 작업 항목을 정렬하여 제공. AI는 정렬만 하고 어떤 것을 먼저 해야 한다고 제안하지 않음</li><li>• 맞춤 협상이 필요하므로 AI는 정보만 정렬. 할인율과 조건은 운영자가 결정</li><li>• 첫 가치 전달 실패는 이탈 직결. 지연 원인을 정리하여 운영자가 고객사와 소통할 근거 제공</li><li>• 급락은 이탈 전조. AI는 패턴만 감지하고, 원인 분석과 해결책은 운영자가 고객 인터뷰 후 결정</li><li>• 갱신 협상을 위한 근거 자료 제공. 가격 인상 여부와 계약 조건 변경은 운영자가 고객 관계를 고려해 결정</li><li>• 결제 실패는 민감한 이슈. 재시도 시점과 고객 통지 메시지는 운영자가 고객 관계를 고려해 결정</li><li>• 이탈은 최종 단계. 복구 제안 여부는 운영자가 LTV와 비용을 계산하여 결정. AI는 패턴만 제공</li>
+                            </ul>
+                        </div>
+                
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                <h4 class="font-semibold text-[11px] text-gray-900">반드시 지킨 기준</h4>
+                            </div>
+                            <ul class="text-[10px] text-gray-600 space-y-0.5 ml-3">
+                                <li>• 데이터 품질이 판단의 기초이므로 즉시 검증. 신뢰 임계값(90%) 이상일 때만 다음 단계 진행</li>
+                            </ul>
+                        </div>
+                
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <div class="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
+                                <h4 class="font-semibold text-[11px] text-gray-900">위험 감지 및 보호</h4>
+                            </div>
+                            <ul class="text-[10px] text-gray-600 space-y-0.5 ml-3">
+                                <li>• 모순된 데이터로 판단하면 법적 리스크 발생. 시스템은 즉시 중단하고 인간에게 전권 이양</li>
+                            </ul>
+                        </div>
+                
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+                                <h4 class="font-semibold text-[11px] text-gray-900">과거 기록</h4>
+                            </div>
+                            <ul class="text-[10px] text-gray-600 space-y-0.5 ml-3">
+                                <li>• 왜 그렇게 결정했는지를 기록하면 다음번에 더 빠르고 일관된 판단 가능. 노하우 축적</li>
+                            </ul>
+                        </div>
+                
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <div class="w-1.5 h-1.5 bg-gray-500 rounded-full"></div>
+                                <h4 class="font-semibold text-[11px] text-gray-900">판단 근거 로그</h4>
+                            </div>
+                            <ul class="text-[10px] text-gray-600 space-y-0.5 ml-3">
+                                <li>• 모든 의사결정은 추적 가능해야 하며, 규칙 위반은 즉시 경고. 이력은 분쟁 대응과 학습 자산이 됨</li>
+                            </ul>
+                        </div>
+                
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <div class="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                                <h4 class="font-semibold text-[11px] text-gray-900">운영 효율 상태</h4>
+                            </div>
+                            <ul class="text-[10px] text-gray-600 space-y-0.5 ml-3">
+                                <li>• 미처리 항목이 누락되지 않도록 다음날 최상단에 배치. 우선순위는 긴급도 기준</li>
+                            </ul>
+                        </div>
+                
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- 봉인 문구 -->
+        <div class="bg-white border-t border-gray-200 py-4 mt-6">
+            <div class="text-center">
+                <p class="text-[10px] text-gray-600">
+                    본 프리뷰 UI는 <strong class="text-gray-900">Launchrail Standard OS</strong>의 확정된 화면 사양이며, 시공 및 가격 산정의 기준으로 사용됩니다.
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JOE 패널 (Developer Mode) -->
+    <button class="joe-toggle-btn" id="joeToggleBtn" onclick="toggleJoePanel()">
+        🧠 Developer Mode
+    </button>
+
+    
+        <div class="joe-panel" id="joePanel">
+            <div class="joe-header">
+                <h3>🧠 JOE Layer (Developer / Auditor Mode)</h3>
+                <p class="joe-disclaimer">
+                    This panel shows system-level observation and evaluation.
+                    It does not affect operator decisions.
+                </p>
+            </div>
+            <div class="joe-body">
+                
+            <div class="joe-section">
+                <h4>📊 Observation (Stage 8)</h4>
+                
+                <div class="joe-item">
+                    <div class="joe-item-header">
+                        <strong>JOE: Observation - 시스템 레벨 데이터 수집</strong>
+                        <span class="joe-stage-badge">Stage 8</span>
+                    </div>
+                    <p class="joe-description">비가시 레이어에서 오늘 운영 데이터를 수집합니다. 운영자 화면에 표시되지 않으며, 시스템 개선 목적으로만 사용됩니다.</p>
+                    <div class="joe-meta">
+                        <div><strong>Input:</strong> 운영자 로그인 시간: 09:03 / 평균 항목당 검토 시간: 4.2분 / Human Gate 통과율: 95% (1건 보류) / 데이터 신뢰도 평균: 94.2%</div>
+                        <div><strong>Output:</strong> 관찰 기록: 결제 실패 알림 응답 시간 평균 12분 / 온보딩 지연 항목은 검토 시간 2배 소요 / Safety 트리거 1회 발생</div>
+                        <div><strong>Reasoning:</strong> 시스템이 어떻게 작동했는지 기록. 운영자 부담이 큰 영역을 식별하기 위한 데이터 수집</div>
+                    </div>
+                </div>
+                
+            </div>
+            
+                
+            <div class="joe-section">
+                <h4>📈 Evaluation (Stage 9)</h4>
+                
+                <div class="joe-item">
+                    <div class="joe-item-header">
+                        <strong>JOE: Evaluation - 패턴 분석 (추천 없음)</strong>
+                        <span class="joe-stage-badge">Stage 9</span>
+                    </div>
+                    <p class="joe-description">지난 30일간 데이터를 분석하여 패턴을 기록합니다. 어떤 제안도 하지 않고 사실만 분류합니다.</p>
+                    <div class="joe-meta">
+                        <div><strong>Input:</strong> 지난 30일: 총 결정 689건 / Safety 트리거 12회 / 데이터 오염 선언 4회 / Human Gate 보류율 8%</div>
+                        <div><strong>Output:</strong> 패턴 기록: 결제 실패 항목의 70%는 카드 만료 / 온보딩 지연 케이스의 85%는 API 문서 지연 / 갱신 협상은 평균 3회 검토 필요</div>
+                        <div><strong>Reasoning:</strong> 무엇이 자주 발생하는지 분류. '다음엔 이렇게 하세요' 같은 제안은 절대 금지</div>
+                    </div>
+                </div>
+                
+            </div>
+            
+                
+            <div class="joe-section">
+                <h4>🔄 Evolution (Stage 10)</h4>
+                
+                <div class="joe-item">
+                    <div class="joe-item-header">
+                        <strong>JOE: Evolution - 개선 계획 (v1.x 실험 영역)</strong>
+                        <span class="joe-stage-badge">Stage 10</span>
+                    </div>
+                    <p class="joe-description">수집된 패턴을 바탕으로 v1.x에서 실험 가능한 개선 항목을 기록합니다. AI 비결정 원칙과 7-Layer 구조는 변경하지 않습니다.</p>
+                    <div class="joe-meta">
+                        <div><strong>Input:</strong> Observation/Evaluation 데이터 분석 / 운영자 피드백 로그 / 안정성 지표</div>
+                        <div><strong>Output:</strong> 실험 후보: UI 시각화 개선 (결제 실패 알림 색상 변경), 리스크 가중치 조정 (온보딩 지연 감지 민감도 +10%), API 커넥터 추가 (Slack 알림 연동)</div>
+                        <div><strong>Reasoning:</strong> 시스템을 더 나은 도구로 만들되, 핵심 철학(AI 비결정)은 절대 변경 안 함. 실험은 샌드박스에서만</div>
+                    </div>
+                </div>
+                
+            </div>
+            
+            </div>
+        </div>
+        
+
+    <script>
+        function toggleJoePanel() {
+            const panel = document.getElementById('joePanel');
+            panel.classList.toggle('visible');
+        }
+
+        if (window.location.search.includes('dev=true')) {
+            document.getElementById('joePanel').classList.add('visible');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'J') {
+                toggleJoePanel();
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>

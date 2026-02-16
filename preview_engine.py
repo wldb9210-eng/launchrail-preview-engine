@@ -200,6 +200,12 @@ class PreviewEngine:
             7: "앞으로 바뀔 수 있는 영역"
         }
 
+        # Stage별 Tailwind 색상 매핑
+        stage_colors = {
+            1: "blue", 2: "blue", 3: "amber",
+            4: "emerald", 5: "gray", 6: "purple", 7: "indigo"
+        }
+
         # ① Global Status 추출
         global_status = "OK"
         global_message = "오늘 전체 운영 상태는 정상입니다"
@@ -209,18 +215,27 @@ class PreviewEngine:
             global_status = "Warning"
             global_message = f"주의가 필요한 항목이 {warning_count}개 있습니다"
 
+        status_dot = "green" if global_status == "OK" else "amber"
+        status_label = f"{system_name} 운영 정상" if global_status == "OK" else f"운영 주의 · {warning_count}건"
+
         # ② Today's One Thing 추출 (첫 번째 action 타입)
         one_thing = next((e for e in jde_events if e.get('type') == 'action'), None)
         one_thing_html = ""
         if one_thing:
             one_thing_html = f'''
-            <div class="one-thing-card">
-                <h2>오늘 할 일</h2>
-                <div class="one-thing-content">
-                    <h3>{one_thing.get('title', '')}</h3>
-                    <p>{one_thing.get('description', '')}</p>
+            <div class="card p-5 mb-5" style="background: #FFF9E5;">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-amber-200 rounded-xl flex items-center justify-center text-2xl">{one_thing.get('icon', '📌')}</div>
+                        <div>
+                            <p class="text-amber-700 text-[10px] font-semibold uppercase tracking-wider mb-0.5">오늘 꼭 해야 할 일</p>
+                            <h3 class="text-gray-900 text-lg font-bold">{one_thing.get('title', '')}</h3>
+                        </div>
+                    </div>
+                    <button class="bg-amber-400 hover:bg-amber-500 text-gray-900 px-5 py-2 rounded-full font-semibold text-xs transition">
+                        {one_thing.get('action_label', '지금 확인')} →
+                    </button>
                 </div>
-                <button class="btn-action">{one_thing.get('action_label', '실행하기')}</button>
             </div>
             '''
 
@@ -233,28 +248,52 @@ class PreviewEngine:
             elif event.get('human_gate'):
                 status = "warning"
 
+            color_map = {"normal": "emerald", "warning": "amber", "danger": "red"}
+            label_map = {"normal": "정상", "warning": "주의", "danger": "위험"}
+            color = color_map[status]
+            label = label_map[status]
+
             signal_cards_html.append(f'''
-            <div class="signal-card signal-{status}">
-                <div class="signal-icon">{event.get('icon', '📊')}</div>
-                <div class="signal-headline">{event.get('title', '')}</div>
-                <div class="signal-value">{event.get('value', '')}</div>
-                <div class="signal-progress">
-                    <div class="progress-bar-inner" style="width: {event.get('progress', 0)}%"></div>
+                <div class="card p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="w-10 h-10 bg-{color}-100 rounded-lg flex items-center justify-center text-lg">
+                            {event.get('icon', '📊')}
+                        </div>
+                        <span class="text-[10px] font-semibold text-gray-500 uppercase">{label}</span>
+                    </div>
+                    <h4 class="text-gray-900 font-bold text-sm mb-1">{event.get('title', '')}</h4>
+                    <div class="flex items-end gap-1 mb-2">
+                        <span class="text-3xl font-bold text-gray-900">{event.get('value', '')}</span>
+                    </div>
+                    <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                        <div class="h-full bg-{color}-500" style="width: {event.get('progress', 0)}%"></div>
+                    </div>
+                    <p class="text-[10px] text-gray-600">{event.get('description', '')}</p>
                 </div>
-            </div>
             ''')
 
         # ④ Recent History
+        last_events = jde_events[-5:]
         history_html = []
-        for i, event in enumerate(jde_events[-5:]):
+        for i, event in enumerate(last_events):
+            status = event.get('status', 'normal')
+            color_map = {"normal": "emerald", "warning": "amber", "danger": "red"}
+            label_map = {"normal": "완료", "warning": "주의", "danger": "위험"}
+            color = color_map.get(status, "emerald")
+            label = label_map.get(status, status)
+            border = "border-b border-gray-50" if i < len(last_events) - 1 else ""
+
             history_html.append(f'''
-            <tr>
-                <td class="history-time">{event.get('time', '00:00')}</td>
-                <td class="history-activity">{event.get('title', '')}</td>
-                <td class="history-status">
-                    <span class="status-badge status-{event.get('status', 'normal')}">{event.get('status', 'OK')}</span>
-                </td>
-            </tr>
+                        <div class="flex items-center justify-between py-2 {border}">
+                            <div class="flex items-center gap-3">
+                                <span class="text-[10px] text-gray-500 font-mono w-12">{event.get('time', '00:00')}</span>
+                                <span class="text-xs font-medium text-gray-900">{event.get('title', '')}</span>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-{color}-100 text-{color}-700 rounded-full text-[10px] font-semibold">
+                                <span class="w-1 h-1 bg-{color}-500 rounded-full"></span>
+                                {label}
+                            </span>
+                        </div>
             ''')
 
         # ⑤ Reason/Coverage
@@ -263,15 +302,21 @@ class PreviewEngine:
             stage_events = [e for e in jde_events if e.get('stage') == stage]
             if stage_events:
                 section_title = stage_mapping.get(stage, f"Stage {stage}")
+                color = stage_colors.get(stage, "gray")
                 items = []
                 for e in stage_events:
-                    items.append(f'<li>{e.get("reasoning", e.get("description", ""))}</li>')
+                    items.append(f'<li>• {e.get("reasoning", e.get("description", ""))}</li>')
 
                 reason_sections_html.append(f'''
-                <div class="reason-section">
-                    <h4>{section_title}</h4>
-                    <ul>{''.join(items)}</ul>
-                </div>
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <div class="w-1.5 h-1.5 bg-{color}-500 rounded-full"></div>
+                                <h4 class="font-semibold text-[11px] text-gray-900">{section_title}</h4>
+                            </div>
+                            <ul class="text-[10px] text-gray-600 space-y-0.5 ml-3">
+                                {''.join(items)}
+                            </ul>
+                        </div>
                 ''')
 
         joe_panel = self._render_joe_panel(joe_data)
@@ -282,624 +327,238 @@ class PreviewEngine:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{system_name} - Launchrail Standard OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {{
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }}
-
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
-            background: #f5f7fa;
-            min-height: 100vh;
-            display: flex;
-        }}
-
-        /* 좌측 사이드바 */
-        .sidebar {{
-            width: 220px;
-            background: #2c3e50;
-            color: white;
-            padding: 30px 20px;
-            position: fixed;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            z-index: 100;
-        }}
-
-        .sidebar h1 {{
-            font-size: 1.3em;
-            margin-bottom: 10px;
-        }}
-
-        .sidebar .version {{
-            font-size: 0.85em;
-            color: #95a5a6;
-            margin-bottom: 30px;
-        }}
-
-        .sidebar nav {{
-            margin-top: 30px;
-        }}
-
-        .sidebar nav a {{
-            display: block;
-            color: #ecf0f1;
-            text-decoration: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            margin-bottom: 5px;
-            transition: background 0.2s;
-        }}
-
-        .sidebar nav a:hover {{
-            background: rgba(255,255,255,0.1);
-        }}
-
-        /* 메인 영역 */
-        .main-container {{
-            margin-left: 220px;
-            width: calc(100% - 220px);
-            display: flex;
-            flex-direction: column;
-        }}
-
-        /* 상단 헤더 */
-        .top-header {{
-            background: white;
-            padding: 20px 40px;
-            border-bottom: 1px solid #e1e8ed;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 90;
-        }}
-
-        .search-box {{
-            flex: 1;
-            max-width: 500px;
-        }}
-
-        .search-box input {{
-            width: 100%;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            font-size: 0.95em;
-        }}
-
-        .header-status {{
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }}
-
-        .status-indicator {{
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.9em;
-        }}
-
-        .status-ok {{
-            background: #d4edda;
-            color: #155724;
-        }}
-
-        .status-warning {{
-            background: #fff3cd;
-            color: #856404;
-        }}
-
-        .status-danger {{
-            background: #f8d7da;
-            color: #721c24;
-        }}
-
-        /* 메인 콘텐츠 */
-        .main-content {{
-            padding: 30px 40px;
-            flex: 1;
-        }}
-
-        /* ① Global Status Bar */
-        .global-status {{
-            background: white;
-            padding: 20px 30px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border-left: 5px solid #28a745;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }}
-
-        .global-status.warning {{
-            border-left-color: #ffc107;
-        }}
-
-        .global-status.danger {{
-            border-left-color: #dc3545;
-        }}
-
-        .global-status h2 {{
-            font-size: 1.1em;
-            color: #333;
-            margin-bottom: 8px;
-        }}
-
-        .global-status .message {{
-            color: #666;
-            font-size: 0.95em;
-        }}
-
-        /* ② Today's One Thing */
-        .one-thing-card {{
-            background: #FFF9E5;
-            padding: 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            border: 2px solid #f5e6a8;
-        }}
-
-        .one-thing-card h2 {{
-            font-size: 0.9em;
-            color: #856404;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 15px;
-        }}
-
-        .one-thing-content h3 {{
-            font-size: 1.5em;
-            color: #333;
-            margin-bottom: 10px;
-        }}
-
-        .one-thing-content p {{
-            color: #666;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }}
-
-        .btn-action {{
-            background: #ffc107;
-            color: #333;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-size: 1em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }}
-
-        .btn-action:hover {{
-            background: #e0a800;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }}
-
-        /* ③ Signal Cards - 4열 그리드 */
-        .signal-grid {{
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }}
-
-        .signal-card {{
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            border-left: 4px solid #28a745;
-        }}
-
-        .signal-card.signal-warning {{
-            border-left-color: #ffc107;
-        }}
-
-        .signal-card.signal-danger {{
-            border-left-color: #dc3545;
-        }}
-
-        .signal-icon {{
-            font-size: 2em;
-            margin-bottom: 10px;
-        }}
-
-        .signal-headline {{
-            font-size: 0.9em;
-            color: #666;
-            margin-bottom: 10px;
-        }}
-
-        .signal-value {{
-            font-size: 1.8em;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 10px;
-        }}
-
-        .signal-progress {{
-            height: 6px;
-            background: #e9ecef;
-            border-radius: 3px;
+            background: #F5F7FA;
             overflow: hidden;
         }}
-
-        .progress-bar-inner {{
-            height: 100%;
-            background: #28a745;
-            transition: width 0.3s;
-        }}
-
-        /* ④⑤ History + Reason 2:1 레이아웃 */
-        .bottom-grid {{
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-            margin-bottom: 60px;
-        }}
-
-        /* ④ Recent History */
-        .history-panel {{
+        .card {{
             background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }}
-
-        .history-panel h3 {{
-            font-size: 1.1em;
-            margin-bottom: 20px;
-            color: #333;
-        }}
-
-        .history-table {{
-            width: 100%;
-            border-collapse: collapse;
-        }}
-
-        .history-table th {{
-            text-align: left;
-            padding: 12px;
-            background: #f8f9fa;
-            color: #666;
-            font-weight: 600;
-            font-size: 0.85em;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }}
-
-        .history-table td {{
-            padding: 12px;
-            border-bottom: 1px solid #e9ecef;
-            font-size: 0.9em;
-        }}
-
-        .history-time {{
-            color: #999;
-            width: 80px;
-        }}
-
-        .history-activity {{
-            color: #333;
-        }}
-
-        .history-status {{
-            width: 100px;
-            text-align: right;
-        }}
-
-        .status-badge {{
-            padding: 4px 12px;
             border-radius: 12px;
-            font-size: 0.8em;
-            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
         }}
-
-        .status-badge.status-normal {{
-            background: #d4edda;
-            color: #155724;
-        }}
-
-        .status-badge.status-warning {{
-            background: #fff3cd;
-            color: #856404;
-        }}
-
-        .status-badge.status-danger {{
-            background: #f8d7da;
-            color: #721c24;
-        }}
-
-        /* ⑤ Reason/Coverage */
-        .reason-panel {{
+        .sidebar {{
+            width: 220px;
             background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            max-height: 600px;
+            border-right: 1px solid #E5E7EB;
+        }}
+        .main-content {{
+            height: 100vh;
             overflow-y: auto;
         }}
 
-        .reason-panel h3 {{
-            font-size: 1.1em;
-            margin-bottom: 15px;
-            color: #333;
-        }}
-
-        .reason-disclaimer {{
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            font-size: 0.85em;
-            color: #666;
-            line-height: 1.5;
-            margin-bottom: 20px;
-            border-left: 3px solid #6c757d;
-        }}
-
-        .reason-section {{
-            margin-bottom: 20px;
-        }}
-
-        .reason-section h4 {{
-            font-size: 0.95em;
-            color: #495057;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }}
-
-        .reason-section ul {{
-            list-style: none;
-            padding-left: 0;
-        }}
-
-        .reason-section li {{
-            padding: 8px 0;
-            color: #666;
-            font-size: 0.9em;
-            line-height: 1.5;
-            border-bottom: 1px solid #f1f3f5;
-        }}
-
-        .reason-section li:last-child {{
-            border-bottom: none;
-        }}
-
-        /* 봉인 문구 */
-        .seal-notice {{
-            position: fixed;
-            bottom: 0;
-            left: 220px;
-            right: 0;
-            background: #2c3e50;
-            color: white;
-            padding: 15px 40px;
-            text-align: center;
-            font-size: 0.85em;
-            z-index: 80;
-            border-top: 3px solid #ffc107;
-        }}
-
-        /* JOE 패널 (기존 유지) */
+        /* JOE 패널 */
         .joe-toggle-btn {{
-            position: fixed;
-            bottom: 70px;
-            right: 20px;
-            background: #333;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 25px;
-            font-size: 0.9em;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            z-index: 1002;
-            transition: all 0.3s ease;
-        }}
-
-        .joe-toggle-btn:hover {{
-            background: #555;
-            transform: translateY(-2px);
-        }}
-
-        .joe-panel {{
             position: fixed;
             bottom: 20px;
             right: 20px;
-            width: 400px;
-            max-height: 500px;
+            background: #1f2937;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 25px;
+            font-size: 0.8em;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1002;
+            transition: all 0.2s;
+        }}
+        .joe-toggle-btn:hover {{
+            background: #374151;
+            transform: translateY(-2px);
+        }}
+        .joe-panel {{
+            position: fixed;
+            bottom: 60px;
+            right: 20px;
+            width: 380px;
+            max-height: 480px;
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             overflow: hidden;
             z-index: 999;
             display: none;
         }}
-
         .joe-panel.visible {{
             display: block;
         }}
-
         .joe-header {{
-            background: #2c3e50;
+            background: #1f2937;
             color: white;
-            padding: 20px;
+            padding: 16px 20px;
         }}
-
         .joe-header h3 {{
-            margin-bottom: 10px;
-            font-size: 1.2em;
+            margin-bottom: 8px;
+            font-size: 1em;
+            font-weight: 700;
         }}
-
         .joe-disclaimer {{
-            font-size: 0.85em;
-            color: #ecf0f1;
-            font-style: italic;
+            font-size: 0.75em;
+            color: #d1d5db;
             line-height: 1.4;
         }}
-
         .joe-body {{
-            padding: 20px;
-            max-height: 400px;
+            padding: 16px;
+            max-height: 360px;
             overflow-y: auto;
         }}
-
         .joe-section {{
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }}
-
         .joe-section h4 {{
-            color: #2c3e50;
-            font-size: 1.1em;
-            margin-bottom: 10px;
-            padding-bottom: 5px;
-            border-bottom: 2px solid #ecf0f1;
-        }}
-
-        .joe-empty {{
-            color: #999;
-            font-style: italic;
+            color: #1f2937;
             font-size: 0.9em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #e5e7eb;
         }}
-
+        .joe-empty {{
+            color: #9ca3af;
+            font-style: italic;
+            font-size: 0.8em;
+        }}
         .joe-item {{
-            background: #f8f9fa;
-            padding: 12px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            border-left: 3px solid #95a5a6;
+            background: #f9fafb;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border-left: 3px solid #9ca3af;
         }}
-
         .joe-item-header {{
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }}
-
         .joe-stage-badge {{
-            background: #95a5a6;
+            background: #6b7280;
             color: white;
-            padding: 3px 10px;
+            padding: 2px 8px;
             border-radius: 10px;
-            font-size: 0.8em;
+            font-size: 0.7em;
+            font-weight: 600;
         }}
-
         .joe-description {{
-            color: #555;
-            font-size: 0.9em;
+            color: #6b7280;
+            font-size: 0.8em;
             line-height: 1.5;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }}
-
         .joe-meta {{
-            font-size: 0.85em;
-            color: #666;
+            font-size: 0.75em;
+            color: #6b7280;
         }}
-
         .joe-meta div {{
-            margin-bottom: 4px;
-        }}
-
-        @media (max-width: 1200px) {{
-            .signal-grid {{
-                grid-template-columns: repeat(2, 1fr);
-            }}
-
-            .bottom-grid {{
-                grid-template-columns: 1fr;
-            }}
+            margin-bottom: 3px;
         }}
     </style>
 </head>
-<body>
+<body class="flex">
+
     <!-- 좌측 사이드바 -->
-    <div class="sidebar">
-        <h1>{system_name}</h1>
-        <div class="version">v{version}</div>
-        <nav>
-            <a href="#dashboard">📊 Dashboard</a>
-            <a href="#signals">📡 Signals</a>
-            <a href="#history">🕐 History</a>
-            <a href="#settings">⚙️ Settings</a>
+    <div class="sidebar h-screen p-5">
+        <div class="mb-6">
+            <h1 class="text-xl font-bold text-gray-900">{system_name}</h1>
+            <p class="text-[10px] text-gray-500 mt-0.5">v{version}</p>
+        </div>
+        <nav class="space-y-1">
+            <a href="#" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-900 font-medium text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                Dashboard
+            </a>
         </nav>
     </div>
 
-    <!-- 메인 컨테이너 -->
-    <div class="main-container">
+    <!-- 메인 컨텐츠 -->
+    <div class="flex-1 main-content">
+
         <!-- 상단 헤더 -->
-        <div class="top-header">
-            <div class="search-box">
-                <input type="text" placeholder="검색...">
-            </div>
-            <div class="header-status">
-                <span class="status-indicator status-{global_status.lower()}">{global_status}</span>
+        <div class="bg-white border-b border-gray-200 px-6 py-3 sticky top-0 z-10">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-xl font-bold text-gray-900">Dashboard</h2>
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-2 h-2 bg-{status_dot}-500 rounded-full"></div>
+                        <span class="text-xs text-gray-600">{status_label}</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="text" placeholder="Search..." class="px-3 py-1.5 bg-gray-50 rounded-lg text-xs border-0 w-48">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full"></div>
+                </div>
             </div>
         </div>
 
-        <!-- 메인 콘텐츠 -->
-        <div class="main-content">
-            <!-- ① Global Status Bar -->
-            <div class="global-status {global_status.lower()}">
-                <h2>전체 운영 상태</h2>
-                <div class="message">{global_message}</div>
-            </div>
+        <div class="p-6">
 
             <!-- ② Today's One Thing -->
             {one_thing_html}
 
             <!-- ③ Signal Cards -->
-            <div class="signal-grid">
+            <div class="grid grid-cols-4 gap-4 mb-5">
                 {''.join(signal_cards_html)}
             </div>
 
             <!-- ④⑤ History + Reason -->
-            <div class="bottom-grid">
+            <div class="grid grid-cols-3 gap-4">
+
                 <!-- ④ Recent History -->
-                <div class="history-panel">
-                    <h3>최근 활동</h3>
-                    <table class="history-table">
-                        <thead>
-                            <tr>
-                                <th>시간</th>
-                                <th>활동</th>
-                                <th>상태</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {''.join(history_html)}
-                        </tbody>
-                    </table>
+                <div class="col-span-2 card p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2">
+                            <span>📜</span> 최근 활동 기록
+                        </h3>
+                    </div>
+                    <div class="space-y-0">
+                        {''.join(history_html)}
+                    </div>
                 </div>
 
                 <!-- ⑤ Reason/Coverage -->
-                <div class="reason-panel">
-                    <h3>판단 근거</h3>
-                    <div class="reason-disclaimer">
-                        이 영역은 참고용 설명이며, 운영에 필요한 모든 판단은 상단 상태와 오늘 할 일에 이미 반영되어 있습니다.
+                <div class="card p-4">
+                    <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <span>💡</span> 판단 근거
+                    </h3>
+                    <div class="bg-blue-50 rounded-lg p-3 mb-3">
+                        <p class="text-[10px] text-blue-900 leading-relaxed">
+                            운영에 필요한 모든 판단은 <strong>상단</strong>에 반영되어 있습니다.
+                        </p>
                     </div>
-                    {''.join(reason_sections_html)}
+                    <div class="space-y-3">
+                        {''.join(reason_sections_html)}
+                    </div>
                 </div>
+
             </div>
+
         </div>
 
         <!-- 봉인 문구 -->
-        <div class="seal-notice">
-            본 프리뷰 UI는 Launchrail Standard OS의 확정된 화면 사양이며, 시공 및 가격 산정의 기준으로 사용됩니다.
+        <div class="bg-white border-t border-gray-200 py-4 mt-6">
+            <div class="text-center">
+                <p class="text-[10px] text-gray-600">
+                    본 프리뷰 UI는 <strong class="text-gray-900">Launchrail Standard OS</strong>의 확정된 화면 사양이며, 시공 및 가격 산정의 기준으로 사용됩니다.
+                </p>
+            </div>
         </div>
+
     </div>
 
     <!-- JOE 패널 (Developer Mode) -->
     <button class="joe-toggle-btn" id="joeToggleBtn" onclick="toggleJoePanel()">
-        🧠 Developer / Auditor Mode
+        🧠 Developer Mode
     </button>
 
     {joe_panel}
@@ -910,7 +569,6 @@ class PreviewEngine:
             panel.classList.toggle('visible');
         }}
 
-        // ?dev=true 또는 Cmd+Shift+J로 JOE 패널 토글
         if (window.location.search.includes('dev=true')) {{
             document.getElementById('joePanel').classList.add('visible');
         }}
