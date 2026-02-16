@@ -827,6 +827,9 @@ class PreviewEngine:
         <div class="version">v{version}</div>
         <nav>
             <a href="#dashboard">📊 Dashboard</a>
+            <a href="#signals">📡 Signals</a>
+            <a href="#history">🕐 History</a>
+            <a href="#settings">⚙️ Settings</a>
         </nav>
     </div>
 
