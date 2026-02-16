@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B2B SaaS 구독 운영 OS - Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        .version {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+
+        .verdict {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .principles {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .principles h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .principles ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .principles li {
+            padding: 8px 0;
+            color: #555;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .principles li:last-child {
+            border-bottom: none;
+        }
+
+        .principles li::before {
+            content: "✓ ";
+            color: #4CAF50;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: rgba(255,255,255,0.3);
+        }
+
+        .event-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            position: relative;
+            transition: all 0.3s ease;
+            opacity: 0.6;
+        }
+
+        .event-card.active {
+            opacity: 1;
+            transform: translateX(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .event-card.completed {
+            opacity: 0.5;
+            background: #f0f0f0;
+        }
+
+        .event-card::before {
+            content: '';
+            position: absolute;
+            left: -28px;
+            top: 30px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border: 3px solid #667eea;
+            border-radius: 50%;
+        }
+
+        .event-card.active::before {
+            background: #667eea;
+            box-shadow: 0 0 0 6px rgba(102, 126, 234, 0.3);
+        }
+
+        .event-card.completed::before {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+
+        .human-gate {
+            border-left: 5px solid #ff9800;
+        }
+
+        .safety-event {
+            border-left: 5px solid #f44336;
+            background: #fff3f3;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .card-header h3 {
+            color: #333;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .event-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            min-width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 35px;
+            font-size: 0.8em;
+            flex-shrink: 0;
+        }
+
+        .badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .badge-stage {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-layer {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .card-body {
+            margin-bottom: 15px;
+        }
+
+        .description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .event-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .meta-item {
+            color: #555;
+            font-size: 0.95em;
+        }
+
+        .decision-box {
+            background: #fff3cd;
+            border-left: 4px solid #ff9800;
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+
+        .decision-box strong {
+            color: #856404;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .joe-toggle-btn {
+            position: fixed;
+            bottom: 440px;
+            right: 20px;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 1002;
+            transition: all 0.3s ease;
+        }
+
+        .joe-toggle-btn:hover {
+            background: #34495e;
+            transform: translateY(-2px);
+        }
+
+        .joe-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 390px;
+            width: 450px;
+            max-height: 600px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            z-index: 999;
+            display: none;
+        }
+
+        .joe-panel.visible {
+            display: block;
+        }
+
+        .joe-header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+        }
+
+        .joe-header h3 {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .joe-disclaimer {
+            font-size: 0.85em;
+            color: #ecf0f1;
+            font-style: italic;
+            line-height: 1.4;
+        }
+
+        .joe-body {
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .joe-section {
+            margin-bottom: 20px;
+        }
+
+        .joe-section h4 {
+            color: #2c3e50;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .joe-item {
+            background: #f8f9fa;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #95a5a6;
+        }
+
+        .joe-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .joe-stage-badge {
+            background: #95a5a6;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.8em;
+        }
+
+        .joe-description {
+            color: #555;
+            font-size: 0.9em;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .joe-meta {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .joe-meta div {
+            margin-bottom: 4px;
+        }
+
+        .joe-philosophy {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 8px;
+            font-size: 0.85em;
+            color: #856404;
+            border-left: 3px solid #ff9800;
+        }
+
+        .log-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            max-height: 400px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            z-index: 1000;
+        }
+
+        .log-header {
+            background: #333;
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+        }
+
+        .log-body {
+            padding: 15px;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid #667eea;
+            background: #f8f9fa;
+            font-size: 0.9em;
+        }
+
+        .log-entry.success {
+            border-left-color: #4CAF50;
+        }
+
+        .log-entry.warning {
+            border-left-color: #ff9800;
+        }
+
+        .log-entry.error {
+            border-left-color: #f44336;
+        }
+
+        .log-timestamp {
+            color: #999;
+            font-size: 0.85em;
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: rgba(0,0,0,0.1);
+            z-index: 1001;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        @media (max-width: 1200px) {
+            .log-panel {
+                width: 300px;
+            }
+
+            .joe-panel {
+                width: 350px;
+                right: 330px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .log-panel {
+                width: calc(100% - 40px);
+                bottom: 10px;
+                right: 20px;
+                left: 20px;
+            }
+
+            .joe-panel {
+                width: calc(100% - 40px);
+                right: 20px;
+                left: 20px;
+                bottom: 430px;
+            }
+
+            .joe-toggle-btn {
+                bottom: auto;
+                top: 80px;
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>
+                B2B SaaS 구독 운영 OS
+                <span class="version">v1.0.0</span>
+            </h1>
+            <p class="subtitle">🎬 Interactive Preview - AI 비결정 원칙 (판단은 사람, 정보는 AI)</p>
+            <div class="verdict">✅ PASS - Pre-built 반복판매 적합</div>
+
+            <div class="principles">
+                <h3>핵심 원칙</h3>
+                <ul>
+                    <li>가시성 우선: 모든 데이터는 결론 없이 정렬</li>
+                    <li>판단 이력 자산화: 왜 특정 결정을 내렸는지 기록</li>
+                    <li>AI 비결정 원칙: AI는 외부 커뮤니케이션/요금 청구/계약 변경 불가</li>
+                    <li>리스크 기반 가격: Basic/Pro/Premium은 방어 가능한 리스크 범위로 구분</li>
+                    <li>안정성 우선: 데이터 오염 발생 시 즉시 중단</li>
+                </ul>
+            </div>
+        </header>
+
+        <div class="timeline" id="timeline">
+            <!-- JDE Layer Events -->
+
+            <div class="event-card" data-index="0" data-type="system_init">
+                <div class="card-header">
+                    <h3>
+                        <span class="event-number">#1</span>
+                        시스템 시작 및 오늘의 검토 항목 로드
+                    </h3>
+                    <div class="badges">
+                        <span class="badge badge-stage">Stage 1</span>
+                        <span class="badge badge-layer">Reasoning</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="description">운영자가 시스템에 로그인하여 '오늘 리뷰해야 할 항목' 목록을 확인합니다. 모든 항목에는 '검토 필요' 표시가 있습니다.</p>
+                    <div class="event-meta">
+                        <span class="meta-item"><strong>Type:</strong> system_init</span>
+                        <span class="meta-item"><strong>Input:</strong> 운영자 로그인 인증 정보</span>
+                        <span class="meta-item"><strong>Output:</strong> 검토 대기 항목 리스트 (영업 제안 3건, 온보딩 지연 2건, 갱신 알림 5건, 결제 실패 1건)</span>
+                        <span class="meta-item"><strong>Reasoning:</strong> 하루 시작 시 우선순위 파악을 위해 전체 작업 항목을 정렬하여 제공. AI는 정렬만 하고 어떤 것을 먼저 해야 한다고 제안하지 않음</span>
+                        <span class="meta-item"><strong>Constraint:</strong> 모든 항목은 '담당자 검토 필요' 상태로 표시</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary" onclick="processEvent(0)">▶️ Execute Event</button>
+                </div>
+            </div>
+
+            <div class="event-card" data-index="1" data-type="data_validation">
+                <div class="card-header">
+                    <h3>
+                        <span class="event-number">#2</span>
+                        데이터 인입 및 정합성 검사
+                    </h3>
+                    <div class="badges">
+                        <span class="badge badge-stage">Stage 2</span>
+                        <span class="badge badge-layer">Constraint + Safety</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="description">시스템이 CRM, 결제 게이트웨이, 제품 사용 로그, 커뮤니케이션 시스템으로부터 데이터를 수집하고 Pre-check 모듈이 누락·모순·오염 여부를 검증합니다.</p>
+                    <div class="event-meta">
+                        <span class="meta-item"><strong>Type:</strong> data_validation</span>
+                        <span class="meta-item"><strong>Input:</strong> CRM 데이터 4,523건, 결제 로그 187건, 사용 로그 12,345건, 커뮤니케이션 기록 89건</span>
+                        <span class="meta-item"><strong>Output:</strong> 데이터 신뢰도: 94.2% (정상 범위) / 모순 항목 3건 감지 → 수동 검토 필요</span>
+                        <span class="meta-item"><strong>Reasoning:</strong> 데이터 품질이 판단의 기초이므로 즉시 검증. 신뢰 임계값(90%) 이상일 때만 다음 단계 진행</span>
+                        <span class="meta-item"><strong>Constraint:</strong> 신뢰도 < 90%: 즉시 Safety 모듈 호출 및 데이터 오염 선언. 모순 항목은 자동 해결 금지</span>
+                        <span class="meta-item" style="color: #f44336;"><strong>⚠️ Risk Note:</strong> 이 단계에서 실패하면 모든 후속 판단이 무효화됨</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary" onclick="processEvent(1)">▶️ Execute Event</button>
+                </div>
+            </div>
+
+            <div class="event-card human-gate" data-index="2" data-type="sales_review">
+                <div class="card-header">
+                    <h3>
+                        <span class="event-number">#3</span>
+                        영업 단계: 신규 계약 제안서 검토
+                    </h3>
+                    <div class="badges">
+                        <span class="badge badge-stage">Stage 1</span>
+                        <span class="badge badge-layer">Reasoning</span>
+                        <span class="badge badge-warning">👤 Human Gate</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="description">새로운 고객사로부터 맞춤형 요금제 요청이 들어왔습니다. AI는 요구사항과 기존 패키지를 비교하여 차이점을 정렬하여 보여줍니다.</p>
+                    <div class="event-meta">
+                        <span class="meta-item"><strong>Type:</strong> sales_review</span>
+                        <span class="meta-item"><strong>Input:</strong> 고객사명: ABC Corp / 요구사항: 100 유저, 온프레미스 연동, 맞춤 SLA 99.9% / 예산: $50K/년</span>
+                        <span class="meta-item"><strong>Output:</strong> 기존 Pro 플랜 대비 차이: +온프레미스 연동(비표준), +SLA 상향(Pro는 99.5%) / 과거 유사 케이스 2건 참조 가능</span>
+                        <span class="meta-item"><strong>Reasoning:</strong> 맞춤 협상이 필요하므로 AI는 정보만 정렬. 할인율과 조건은 운영자가 결정</span>
+                        <span class="meta-item"><strong>Constraint:</strong> AI는 가격 제안 금지. 온프레미스 연동은 Technical Feasibility Review 필수</span>
+                    </div>
+                    <div class="decision-box">
+                        <strong>Decision Required:</strong> 할인율, 계약 조건, 구현 범위 확정 후 기록
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary" onclick="processEvent(2)">▶️ Execute Event</button>
+                </div>
+            </div>
+
+            <div class="event-card human-gate" data-index="3" data-type="onboarding_monitoring">
+                <div class="card-header">
+                    <h3>
+                        <span class="event-number">#4</span>
+                        온보딩 단계: 구현 진행 상태 및 지연 감지
+                    </h3>
+                    <div class="badges">
+                        <span class="badge badge-stage">Stage 1</span>
+                        <span class="badge badge-layer">Reasoning</span>
+                        <span class="badge badge-warning">👤 Human Gate</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="description">신규 고객 XYZ Inc.의 온보딩이 예상보다 1주일 지연되고 있습니다. 데이터 마이그레이션과 시스템 연동 진행 상태를 요약하여 제공합니다.</p>
+                    <div class="event-meta">
+                        <span class="meta-item"><strong>Type:</strong> onboarding_monitoring</span>
+                        <span class="meta-item"><strong>Input:</strong> 고객사: XYZ Inc. / 계약일: 2026-01-15 / 목표 Aha Moment: 2026-02-01 / 현재: 2026-02-06 (5일 지연)</span>
+                        <span class="meta-item"><strong>Output:</strong> 지연 원인 추정: 고객사 API 문서 미제공 (1/30 요청, 미응답) / 다음 마일스톤: 첫 데이터 동기화 테스트</span>
+                        <span class="meta-item"><strong>Reasoning:</strong> 첫 가치 전달 실패는 이탈 직결. 지연 원인을 정리하여 운영자가 고객사와 소통할 근거 제공</span>
+                        <span class="meta-item"><strong>Constraint:</strong> Aha Moment 미달성 시 자동 에스컬레이션 금지. 운영자가 고객 상황 파악 후 결정</span>
+                    </div>
+                    <div class="decision-box">
+                        <strong>Decision Required:</strong> 고객사 재촉 여부, 구현 범위 축소 협의 여부
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary" onclick="processEvent(3)">▶️ Execute Event</button>
+                </div>
+            </div>
+
+            <div class="event-card human-gate" data-index="4" data-type="health_monitoring">
+                <div class="card-header">
+                    <h3>
+                        <span class="event-number">#5</span>
+                        사용 단계: Health Score 급락 감지
+                    </h3>
+                    <div class="badges">
+                        <span class="badge badge-stage">Stage 1</span>
+                        <span class="badge badge-layer">Reasoning</span>
+                        <span class="badge badge-warning">👤 Human Gate</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="description">고객사 DEF Corp의 Health Score가 지난주 85점에서 오늘 62점으로 급락했습니다. 사용량 감소와 지원 티켓 증가를 요약하여 알립니다.</p>
+                    <div class="event-meta">
+                        <span class="meta-item"><strong>Type:</strong> health_monitoring</span>
+                        <span class="meta-item"><strong>Input:</strong> 고객사: DEF Corp / 이전 Health Score: 85 / 현재: 62 (△23) / 주요 변화: 활성 유저 -40%, 지원 티켓 +300%</span>
+                        <span class="meta-item"><strong>Output:</strong> 위험 신호: 핵심 기능 사용 중단(Dashboard 접속 0회/7일) / 최근 티켓: '데이터 불일치 문제' 5건 미해결</span>
+                        <span class="meta-item"><strong>Reasoning:</strong> 급락은 이탈 전조. AI는 패턴만 감지하고, 원인 분석과 해결책은 운영자가 고객 인터뷰 후 결정</span>
+                        <span class="meta-item"><strong>Constraint:</strong> AI는 '고객에게 연락하세요' 같은 제안 금지. 운영자가 상황 판단 후 행동</span>
+                    </div>
+                    <div class="decision-box">
+                        <strong>Decision Required:</strong> 긴급 미팅 요청 여부, 기술 지원 배정 여부, 일시적 무상 지원 제공 여부
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary" onclick="processEvent(4)">▶️ Execute Event</button>
+                </div>
+            </div>
+
+            <div class="event-card human-gate" data-index="5" data-type="renewal_preparation">
+                <div class="card-header">
+                    <h3>
+                        <span class="event-number">#6</span>
+                        갱신 단계: 계약 만료 60일 전 알림
+                    </h3>
+                    <div class="badges">
+                        <span class="badge badge-stage">Stage 1</span>
+                        <span class="badge badge-layer">Reasoning</span>
+                        <span class="badge badge-warning">👤 Human Gate</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="description">고객사 GHI Ltd의 연간 계약이 60일 후 만료됩니다. 과거 사용 이력과 가치 지표를 요약하여 갱신 준비를 돕습니다.</p>
+                    <div class="event-meta">
+                        <span class="meta-item"><strong>Type:</strong> renewal_preparation</span>
+                        <span class="meta-item"><strong>Input:</strong> 고객사: GHI Ltd / 계약 만료: 2026-04-07 (60일 후) / 현재 플랜: Pro $30K/년 / Health Score: 78</span>
+                        <span class="meta-item"><strong>Output:</strong> 과거 1년 사용: 평균 활성 유저 45명(계약 50명) / ROI 추정: $120K 비용 절감 달성 / 지원 티켓 만족도: 4.2/5.0</span>
+                        <span class="meta-item"><strong>Reasoning:</strong> 갱신 협상을 위한 근거 자료 제공. 가격 인상 여부와 계약 조건 변경은 운영자가 고객 관계를 고려해 결정</span>
+                        <span class="meta-item"><strong>Constraint:</strong> AI는 가격 제안 금지. 기계적 알림이 해지 트리거가 될 수 있으므로 메시지 톤도 운영자가 결정</span>
+                    </div>
+                    <div class="decision-box">
+                        <strong>Decision Required:</strong> 갱신 알림 발송 시기, 가격 인상 여부, 추가 기능 제안 여부, 담당자 이름 명시
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary" onclick="processEvent(5)">▶️ Execute Event</button>
+                </div>
+            </div>
+
+            <div class="event-card human-gate" data-index="6" data-type="payment_failure">
+                <div class="card-header">
+                    <h3>
+                        <span class="event-number">#7</span>
+                        청구 단계: 결제 실패 및 재시도 관리
+                    </h3>
+                    <div class="badges">
+                        <span class="badge badge-stage">Stage 1</span>
+                        <span class="badge badge-layer">Reasoning</span>
+                        <span class="badge badge-warning">👤 Human Gate</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="description">고객사 JKL Inc.의 월간 결제가 실패했습니다(카드 만료). 결제 재시도 일정과 서비스 중지 시점을 결정해야 합니다.</p>
+                    <div class="event-meta">
+                        <span class="meta-item"><strong>Type:</strong> payment_failure</span>
+                        <span class="meta-item"><strong>Input:</strong> 고객사: JKL Inc. / 결제 금액: $2,500 / 실패 사유: 카드 만료 / 재시도 이력: 1차 실패(2/6)</span>
+                        <span class="meta-item"><strong>Output:</strong> 재시도 정책: 3일 후 2차 시도, 7일 후 3차 시도 / 서비스 중지 예정: 2차 실패 시 일시 중지, 3차 실패 시 완전 중지</span>
+                        <span class="meta-item"><strong>Reasoning:</strong> 결제 실패는 민감한 이슈. 재시도 시점과 고객 통지 메시지는 운영자가 고객 관계를 고려해 결정</span>
+                        <span class="meta-item"><strong>Constraint:</strong> AI는 자동 결제 재시도 실행 금지. 서비스 중지 전 반드시 운영자 승인 필요</span>
+                    </div>
+                    <div class="decision-box">
+                        <strong>Decision Required:</strong> 재시도 일정, 고객 통지 메시지, 서비스 일시 중지 여부
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary" onclick="processEvent(6)">▶️ Execute Event</button>
+                </div>
+            </div>
+
+            <div class="event-card human-gate safety-event" data-index="7" data-type="data_corruption">
+                <div class="card-header">
+                    <h3>
+                        <span class="event-number">#8</span>
+                        Safety 트리거: 데이터 오염 감지
+                    </h3>
+                    <div class="badges">
+                        <span class="badge badge-stage">Stage 3</span>
+                        <span class="badge badge-layer">Safety</span>
+                        <span class="badge badge-danger">🛑 SAFETY</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="description">CRM과 결제 시스템 간 데이터 불일치가 감지되었습니다. 고객사 MNO Corp의 계약 상태가 CRM에는 'Active'이나 결제 시스템에는 'Suspended'로 나타납니다. 신뢰 임계값이 85%로 하락했습니다.</p>
+                    <div class="event-meta">
+                        <span class="meta-item"><strong>Type:</strong> data_corruption</span>
+                        <span class="meta-item"><strong>Input:</strong> 불일치 항목: MNO Corp 계약 상태 / CRM: Active / 결제: Suspended / 데이터 신뢰도: 85% (임계값 90% 미달)</span>
+                        <span class="meta-item"><strong>Output:</strong> ⚠️ 데이터 오염 상태 선언 - 모든 자동 판단 중단 / 수동 검증 필요: MNO Corp 계약 상태 확정 후 재개</span>
+                        <span class="meta-item"><strong>Reasoning:</strong> 모순된 데이터로 판단하면 법적 리스크 발생. 시스템은 즉시 중단하고 인간에게 전권 이양</span>
+                        <span class="meta-item"><strong>Constraint:</strong> 데이터 신뢰도 < 90%: 모든 자동화 중단. 운영자가 원인 파악 및 수동 정정 완료까지 재개 금지</span>
+                        <span class="meta-item" style="color: #f44336;"><strong>🚨 Emergency Protocol:</strong> 즉시 모든 고객 대상 자동 알림 중단, 운영자 긴급 호출</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary" onclick="processEvent(7)">⚠️ Proceed with Caution</button>
+                </div>
+            </div>
+
+            <div class="event-card human-gate" data-index="8" data-type="churn_review">
+                <div class="card-header">
+                    <h3>
+                        <span class="event-number">#9</span>
+                        이탈 단계: 해지 요청 검토
+                    </h3>
+                    <div class="badges">
+                        <span class="badge badge-stage">Stage 1</span>
+                        <span class="badge badge-layer">Reasoning</span>
+                        <span class="badge badge-warning">👤 Human Gate</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="description">고객사 PQR Ventures가 해지를 요청했습니다. 과거 지원 이력과 불만 사항을 요약하여 복구 가능성을 판단할 근거를 제공합니다.</p>
+                    <div class="event-meta">
+                        <span class="meta-item"><strong>Type:</strong> churn_review</span>
+                        <span class="meta-item"><strong>Input:</strong> 고객사: PQR Ventures / 해지 사유: '예산 삭감' / 과거 Health Score: 평균 72 (중간) / 지원 티켓: 총 12건, 평균 해결 시간 18시간</span>
+                        <span class="meta-item"><strong>Output:</strong> 복구 가능성 평가 근거: 기술 불만 낮음(티켓 만족도 4.0/5.0), 가격 민감도 높음(할인 문의 3회) / 과거 유사 케이스: 2건 중 1건 복구 성공(50% 할인 제안)</span>
+                        <span class="meta-item"><strong>Reasoning:</strong> 이탈은 최종 단계. 복구 제안 여부는 운영자가 LTV와 비용을 계산하여 결정. AI는 패턴만 제공</span>
+                        <span class="meta-item"><strong>Constraint:</strong> AI는 환불액이나 보상 제안 금지. 법적 리스크 있는 메시지(사과, 책임 인정)는 운영자만 작성</span>
+                    </div>
+                    <div class="decision-box">
+                        <strong>Decision Required:</strong> 복구 시도 여부, 할인/환불 제안 범위, 최종 메시지 승인
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary" onclick="processEvent(8)">▶️ Execute Event</button>
+                </div>
+            </div>
+
+            <div class="event-card" data-index="9" data-type="audit_check">
+                <div class="card-header">
+                    <h3>
+                        <span class="event-number">#10</span>
+                        Audit: 일일 결정 로그 검증
+                    </h3>
+                    <div class="badges">
+                        <span class="badge badge-stage">Stage 5</span>
+                        <span class="badge badge-layer">Audit</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="description">오늘 이루어진 모든 결정(계약 승인, 갱신 알림, 결제 재시도 등)이 규칙을 준수했는지 검증하고 위반 사항을 보고합니다.</p>
+                    <div class="event-meta">
+                        <span class="meta-item"><strong>Type:</strong> audit_check</span>
+                        <span class="meta-item"><strong>Input:</strong> 오늘 총 결정 23건 / 계약 승인 3건, 갱신 알림 5건, 결제 재시도 1건, 온보딩 지연 경고 2건, 이탈 복구 시도 1건</span>
+                        <span class="meta-item"><strong>Output:</strong> 규칙 준수: 22건 정상 / 위반 의심: 1건 (갱신 알림 #4: 담당자 이름 누락) / 보류 항목: 0건</span>
+                        <span class="meta-item"><strong>Reasoning:</strong> 모든 의사결정은 추적 가능해야 하며, 규칙 위반은 즉시 경고. 이력은 분쟁 대응과 학습 자산이 됨</span>
+                        <span class="meta-item"><strong>Constraint:</strong> 위반 항목은 다음날 우선순위 검토 대상. 반복 위반 시 운영자 재교육 알림</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary" onclick="processEvent(9)">▶️ Execute Event</button>
+                </div>
+            </div>
+
+            <div class="event-card" data-index="10" data-type="decision_logging">
+                <div class="card-header">
+                    <h3>
+                        <span class="event-number">#11</span>
+                        Memory: 판단 이력 요약 및 자산화
+                    </h3>
+                    <div class="badges">
+                        <span class="badge badge-stage">Stage 4</span>
+                        <span class="badge badge-layer">Memory</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="description">오늘 이루어진 주요 판단과 그 사유를 요약하여 저장합니다. 이 기록은 향후 유사 상황에서 참조 자료가 됩니다.</p>
+                    <div class="event-meta">
+                        <span class="meta-item"><strong>Type:</strong> decision_logging</span>
+                        <span class="meta-item"><strong>Input:</strong> 오늘의 주요 결정 8건 / 판단 사유 기록률: 100% (8/8건) / 보류 사유 기록: 2건</span>
+                        <span class="meta-item"><strong>Output:</strong> 자산화 완료: 계약 협상 전략 1건, 온보딩 지연 대응 패턴 1건, 결제 실패 커뮤니케이션 템플릿 1건 추가</span>
+                        <span class="meta-item"><strong>Reasoning:</strong> 왜 그렇게 결정했는지를 기록하면 다음번에 더 빠르고 일관된 판단 가능. 노하우 축적</span>
+                        <span class="meta-item"><strong>Constraint:</strong> 판단 사유 미입력 시 다음 단계 진행 불가. 모든 로그는 암호화 및 접근 제어</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary" onclick="processEvent(10)">▶️ Execute Event</button>
+                </div>
+            </div>
+
+            <div class="event-card" data-index="11" data-type="daily_summary">
+                <div class="card-header">
+                    <h3>
+                        <span class="event-number">#12</span>
+                        하루 종료: 미처리 항목 및 내일 우선순위
+                    </h3>
+                    <div class="badges">
+                        <span class="badge badge-stage">Stage 6</span>
+                        <span class="badge badge-layer">Routing</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="description">운영자가 시스템을 종료하면, 오늘 처리하지 못한 항목을 내일 우선순위로 상단에 배치합니다.</p>
+                    <div class="event-meta">
+                        <span class="meta-item"><strong>Type:</strong> daily_summary</span>
+                        <span class="meta-item"><strong>Input:</strong> 오늘 총 항목: 23건 / 처리 완료: 20건 / 보류: 2건 (온보딩 지연 1건, 갱신 협상 1건) / 새 항목: 1건 (긴급 결제 실패)</span>
+                        <span class="meta-item"><strong>Output:</strong> 내일 우선순위: #1 긴급 결제 실패 (JKL Inc.), #2 온보딩 지연 (XYZ Inc.), #3 갱신 협상 (GHI Ltd.)</span>
+                        <span class="meta-item"><strong>Reasoning:</strong> 미처리 항목이 누락되지 않도록 다음날 최상단에 배치. 우선순위는 긴급도 기준</span>
+                        <span class="meta-item"><strong>Constraint:</strong> 보류된 항목은 48시간 이상 방치 금지. 초과 시 자동 에스컬레이션 알림</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary" onclick="processEvent(11)">▶️ Execute Event</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <button class="joe-toggle-btn" id="joeToggleBtn" onclick="toggleJoePanel()">
+        🧠 Developer / Auditor Mode
+    </button>
+
+    <!-- JOE Panel -->
+    <div class="joe-panel" id="joePanel">
+        <div class="joe-header">
+            <h3>🧠 JOE Layer (Developer / Auditor Mode)</h3>
+            <p class="joe-disclaimer">
+                This panel shows system-level observation and evaluation.
+                It does not affect operator decisions.
+            </p>
+        </div>
+        <div class="joe-body">
+
+            <!-- Observation (Stage 8) -->
+            <div class="joe-section">
+                <h4>📊 Observation (Stage 8)</h4>
+                <div class="joe-item">
+                    <div class="joe-item-header">
+                        <strong>시스템 레벨 데이터 수집</strong>
+                        <span class="joe-stage-badge">Stage 8</span>
+                    </div>
+                    <p class="joe-description">비가시 레이어에서 오늘 운영 데이터를 수집합니다. 운영자 화면에 표시되지 않으며, 시스템 개선 목적으로만 사용됩니다.</p>
+                    <div class="joe-meta">
+                        <div><strong>Input:</strong> 운영자 로그인 시간: 09:03 / 평균 항목당 검토 시간: 4.2분 / Human Gate 통과율: 95% (1건 보류) / 데이터 신뢰도 평균: 94.2%</div>
+                        <div><strong>Output:</strong> 관찰 기록: 결제 실패 알림 응답 시간 평균 12분 / 온보딩 지연 항목은 검토 시간 2배 소요 / Safety 트리거 1회 발생</div>
+                        <div><strong>Reasoning:</strong> 시스템이 어떻게 작동했는지 기록. 운영자 부담이 큰 영역을 식별하기 위한 데이터 수집</div>
+                    </div>
+                    <div class="joe-philosophy">
+                        ⚠️ 이 데이터는 운영자에게 제안이나 피드백으로 제공되지 않음. 오직 기록만
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evaluation (Stage 9) -->
+            <div class="joe-section">
+                <h4>📈 Evaluation (Stage 9)</h4>
+                <div class="joe-item">
+                    <div class="joe-item-header">
+                        <strong>패턴 분석 (추천 없음)</strong>
+                        <span class="joe-stage-badge">Stage 9</span>
+                    </div>
+                    <p class="joe-description">지난 30일간 데이터를 분석하여 패턴을 기록합니다. 어떤 제안도 하지 않고 사실만 분류합니다.</p>
+                    <div class="joe-meta">
+                        <div><strong>Input:</strong> 지난 30일: 총 결정 689건 / Safety 트리거 12회 / 데이터 오염 선언 4회 / Human Gate 보류율 8%</div>
+                        <div><strong>Output:</strong> 패턴 기록: 결제 실패 항목의 70%는 카드 만료 / 온보딩 지연 케이스의 85%는 API 문서 지연 / 갱신 협상은 평균 3회 검토 필요</div>
+                        <div><strong>Reasoning:</strong> 무엇이 자주 발생하는지 분류. '다음엔 이렇게 하세요' 같은 제안은 절대 금지</div>
+                    </div>
+                    <div class="joe-philosophy">
+                        🚫 추천 금지 / 경향성 강조 금지 / 오직 기록·분류·보관만
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evolution (Stage 10) -->
+            <div class="joe-section">
+                <h4>🔄 Evolution (Stage 10)</h4>
+                <div class="joe-item">
+                    <div class="joe-item-header">
+                        <strong>개선 계획 (v1.x 실험 영역)</strong>
+                        <span class="joe-stage-badge">Stage 10</span>
+                    </div>
+                    <p class="joe-description">수집된 패턴을 바탕으로 v1.x에서 실험 가능한 개선 항목을 기록합니다. AI 비결정 원칙과 7-Layer 구조는 변경하지 않습니다.</p>
+                    <div class="joe-meta">
+                        <div><strong>Input:</strong> Observation/Evaluation 데이터 분석 / 운영자 피드백 로그 / 안정성 지표</div>
+                        <div><strong>Output:</strong> 실험 후보: UI 시각화 개선 (결제 실패 알림 색상 변경), 리스크 가중치 조정 (온보딩 지연 감지 민감도 +10%), API 커넥터 추가 (Slack 알림 연동)</div>
+                        <div><strong>Reasoning:</strong> 시스템을 더 나은 도구로 만들되, 핵심 철학(AI 비결정)은 절대 변경 안 함. 실험은 샌드박스에서만</div>
+                    </div>
+                    <div class="joe-philosophy">
+                        🔒 봉인 영역: AI 비결정 원칙, 판단 이력 자산화, Slot A 핵심 철학, 데이터 오염 선언권, SLA 분쟁 시 인간 개입 의무
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="log-panel">
+        <div class="log-header">📋 Timeline Log</div>
+        <div class="log-body" id="logBody"></div>
+    </div>
+
+    <script>
+        let currentEventIndex = -1;
+        const totalEvents = 12;  // JDE events only
+
+        function toggleJoePanel() {
+            const panel = document.getElementById('joePanel');
+            panel.classList.toggle('visible');
+        }
+
+        function addLog(message, type = 'info') {
+            const logBody = document.getElementById('logBody');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.innerHTML = `
+                <div class="log-timestamp">${timestamp}</div>
+                <div>${message}</div>
+            `;
+            logBody.insertBefore(entry, logBody.firstChild);
+        }
+
+        function updateProgress() {
+            const progress = ((currentEventIndex + 1) / totalEvents) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function processEvent(index) {
+            const cards = document.querySelectorAll('.event-card');
+            const card = cards[index];
+            const eventType = card.dataset.type;
+            const title = card.querySelector('h3').textContent.trim();
+
+            // 이전 카드 완료 표시
+            if (currentEventIndex >= 0) {
+                cards[currentEventIndex].classList.remove('active');
+                cards[currentEventIndex].classList.add('completed');
+            }
+
+            // 현재 카드 활성화
+            currentEventIndex = index;
+            card.classList.add('active');
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // 버튼 비활성화
+            const button = card.querySelector('.btn');
+            button.disabled = true;
+            button.textContent = '✓ Completed';
+
+            // 로그 추가
+            if (card.classList.contains('safety-event')) {
+                addLog(`🛑 Safety Event Triggered: ${title}`, 'error');
+            } else if (card.classList.contains('human-gate')) {
+                addLog(`👤 Human Gate: ${title}`, 'warning');
+            } else {
+                addLog(`✓ Event Executed: ${title}`, 'success');
+            }
+
+            // 진행률 업데이트
+            updateProgress();
+
+            // 다음 이벤트 활성화
+            if (index + 1 < totalEvents) {
+                setTimeout(() => {
+                    cards[index + 1].style.opacity = '1';
+                }, 300);
+            } else {
+                addLog('🎉 All JDE events completed! (JOE layer available in Developer Mode)', 'success');
+            }
+        }
+
+        // 초기화: 첫 번째 이벤트만 활성화
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.event-card');
+            if (cards.length > 0) {
+                cards[0].style.opacity = '1';
+                addLog('Preview session started (B2B SaaS 구독 운영 OS)', 'info');
+            }
+        });
+
+        // 키보드 단축키
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                const cards = document.querySelectorAll('.event-card');
+                if (currentEventIndex + 1 < totalEvents) {
+                    processEvent(currentEventIndex + 1);
+                }
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>

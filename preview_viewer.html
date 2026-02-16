@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Launchrail Preview Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #FAFBFC;
+      color: #1a1a2e;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* === Sidebar === */
+    .sidebar {
+      width: 220px;
+      background: #fff;
+      border-right: 1px solid #EEEEF0;
+      padding: 28px 20px;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 4px;
+    }
+
+    .logo-sub {
+      font-size: 10px;
+      color: #999;
+      letter-spacing: 0.5px;
+      margin-bottom: 32px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #666;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 2px;
+    }
+
+    .nav-item:hover { background: #F5F5F7; color: #1a1a2e; }
+    .nav-item.active { background: #F0F0F5; color: #1a1a2e; font-weight: 600; }
+
+    .nav-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .sidebar-status {
+      margin-top: auto;
+      padding: 14px;
+      background: #F8F8FA;
+      border-radius: 12px;
+    }
+
+    .sidebar-status-label {
+      font-size: 10px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .sidebar-status-value {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .sidebar-status-value.ok { color: #22c55e; }
+    .sidebar-status-value.warning { color: #f59e0b; }
+    .sidebar-status-value.action { color: #ef4444; }
+    .sidebar-status-value.idle { color: #999; }
+
+    /* === Main === */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      background: #fff;
+      border-bottom: 1px solid #EEEEF0;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .header-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #666;
+    }
+
+    .header-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .header-dot.ok { background: #22c55e; }
+    .header-dot.warning { background: #f59e0b; }
+    .header-dot.action { background: #ef4444; }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-search {
+      padding: 8px 14px;
+      background: #F5F5F7;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      width: 180px;
+      font-family: inherit;
+      color: #1a1a2e;
+    }
+
+    .header-search::placeholder { color: #bbb; }
+
+    /* Content area */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 32px;
+    }
+
+    /* === Input Mode === */
+    .input-mode {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 20px;
+    }
+
+    .input-mode h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+
+    .input-mode p {
+      font-size: 13px;
+      color: #999;
+      max-width: 400px;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .json-input {
+      width: 100%;
+      max-width: 600px;
+      min-height: 280px;
+      padding: 20px;
+      border: 2px dashed #DDD;
+      border-radius: 14px;
+      background: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #1a1a2e;
+      resize: vertical;
+      transition: border-color 0.2s;
+    }
+
+    .json-input:focus {
+      outline: none;
+      border-color: #1a1a2e;
+      border-style: solid;
+    }
+
+    .json-input::placeholder { color: #ccc; }
+
+    .btn-render {
+      padding: 14px 40px;
+      background: #1a1a2e;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .btn-render:hover {
+      background: #2d2d4a;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(26,26,46,0.15);
+    }
+
+    .btn-back {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      padding: 8px 16px;
+      background: #fff;
+      border: 1px solid #E5E5E5;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      color: #666;
+      z-index: 100;
+      transition: all 0.15s;
+    }
+
+    .btn-back:hover { background: #F5F5F7; color: #1a1a2e; }
+
+    /* === Preview Mode === */
+    .preview-mode { display: none; }
+    .preview-mode.active { display: block; }
+    .input-mode.hidden { display: none; }
+
+    /* Cards */
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      border: 1px solid #F0F0F2;
+    }
+
+    /* One Thing */
+    .one-thing {
+      background: #FFFBEB;
+      border: 1px solid #FEF3C7;
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .one-thing-icon {
+      width: 44px;
+      height: 44px;
+      background: #FDE68A;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .one-thing-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #b45309;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .one-thing-text {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+
+    .one-thing-btn {
+      padding: 10px 20px;
+      background: #FBBF24;
+      border: none;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1a1a2e;
+      cursor: pointer;
+      font-family: inherit;
+      flex-shrink: 0;
+    }
+
+    /* Signal Cards */
+    .signals-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .signal-card {
+      padding: 18px;
+    }
+
+    .signal-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .signal-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .signal-icon.ok { background: #D1FAE5; }
+    .signal-icon.warning { background: #FEF3C7; }
+    .signal-icon.action { background: #FEE2E2; }
+
+    .signal-state {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #999;
+      letter-spacing: 0.5px;
+    }
+
+    .signal-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+    }
+
+    .signal-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+
+    /* Bottom grid */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 14px;
+    }
+
+    /* History */
+    .history-header {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1a1a2e;
+      padding: 18px 20px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .history-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      border-top: 1px solid #F5F5F7;
+    }
+
+    .history-row-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .history-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #999;
+      width: 40px;
+    }
+
+    .history-event {
+      font-size: 12px;
+      font-weight: 500;
+      color: #1a1a2e;
+    }
+
+    .history-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .history-badge.ok { background: #D1FAE5; color: #16a34a; }
+    .history-badge.warning { background: #FEF3C7; color: #d97706; }
+    .history-badge.action { background: #FEE2E2; color: #dc2626; }
+
+    .history-badge-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+    }
+
+    .history-badge.ok .history-badge-dot { background: #16a34a; }
+    .history-badge.warning .history-badge-dot { background: #d97706; }
+    .history-badge.action .history-badge-dot { background: #dc2626; }
+
+    /* Reasoning */
+    .reasoning-header {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1a1a2e;
+      padding: 18px 20px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .reasoning-block {
+      padding: 0 20px 18px;
+    }
+
+    .reasoning-coverage {
+      background: #EFF6FF;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+
+    .reasoning-coverage p {
+      font-size: 11px;
+      color: #1e40af;
+      line-height: 1.7;
+    }
+
+    .reasoning-notes {
+      font-size: 11px;
+      color: #666;
+      line-height: 1.7;
+      padding: 0 2px;
+    }
+
+    /* Footer */
+    .preview-footer {
+      background: #fff;
+      border-top: 1px solid #EEEEF0;
+      padding: 16px;
+      text-align: center;
+      margin-top: 24px;
+      border-radius: 0 0 14px 14px;
+    }
+
+    .preview-footer p {
+      font-size: 10px;
+      color: #999;
+    }
+
+    .preview-footer strong {
+      color: #1a1a2e;
+    }
+
+    /* Error */
+    .error-msg {
+      color: #dc2626;
+      font-size: 13px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .error-msg.show { display: block; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo">Launchrail</div>
+    <div class="logo-sub">Preview Viewer v1.0</div>
+
+    <div class="nav-item active">
+      <span class="nav-icon">📋</span>
+      Dashboard
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">📊</span>
+      Analytics
+    </div>
+
+    <div class="sidebar-status">
+      <div class="sidebar-status-label">Status</div>
+      <div class="sidebar-status-value idle" id="sidebarStatus">대기</div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <h1 class="header-title" id="headerTitle">Preview Viewer</h1>
+        <div class="header-badge" id="headerBadge">
+          <span class="header-dot ok" id="headerDot" style="display:none;"></span>
+          <span id="headerHeadline">JSON을 입력하세요</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <input type="text" class="header-search" placeholder="Search..." readonly>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+
+      <!-- Input Mode -->
+      <div class="input-mode" id="inputMode">
+        <h2>Preview JSON 입력</h2>
+        <p>STEP 3에서 생성된 JSON을 아래에 붙여넣고 렌더 버튼을 누르세요.</p>
+        <textarea class="json-input" id="jsonInput" placeholder='{
+  "status": "OK",
+  "headline": "...",
+  "one_thing": "...",
+  "signals": [...],
+  "history": [...],
+  "reasoning": { "coverage": "...", "notes": "..." }
+}'></textarea>
+        <div class="error-msg" id="errorMsg">⚠️ JSON 형식이 올바르지 않습니다. 확인 후 다시 시도하세요.</div>
+        <button class="btn-render" onclick="renderPreview()">렌더링 시작</button>
+      </div>
+
+      <!-- Preview Mode -->
+      <div class="preview-mode" id="previewMode">
+        <div id="previewContent"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Back Button (preview mode only) -->
+  <button class="btn-back" id="btnBack" style="display:none;" onclick="goBack()">← JSON 다시 입력</button>
+
+  <script>
+    function renderPreview() {
+      const raw = document.getElementById('jsonInput').value.trim();
+      const errEl = document.getElementById('errorMsg');
+
+      if(!raw) {
+        errEl.textContent = '⚠️ JSON을 입력하세요.';
+        errEl.classList.add('show');
+        return;
+      }
+
+      let data;
+      try {
+        data = JSON.parse(raw);
+        errEl.classList.remove('show');
+      } catch(e) {
+        errEl.textContent = '⚠️ JSON 형식이 올바르지 않습니다. 확인 후 다시 시도하세요.';
+        errEl.classList.add('show');
+        return;
+      }
+
+      // Switch mode
+      document.getElementById('inputMode').classList.add('hidden');
+      document.getElementById('previewMode').classList.add('active');
+      document.getElementById('btnBack').style.display = 'block';
+
+      // Header update
+      const status = (data.status || 'OK').toLowerCase();
+      document.getElementById('headerTitle').textContent = 'Dashboard';
+      document.getElementById('headerDot').style.display = 'block';
+      document.getElementById('headerDot').className = `header-dot ${status === 'action' ? 'action' : status === 'warning' ? 'warning' : 'ok'}`;
+      document.getElementById('headerHeadline').textContent = data.headline || '';
+
+      // Sidebar
+      const sidebarEl = document.getElementById('sidebarStatus');
+      sidebarEl.textContent = data.status || 'OK';
+      sidebarEl.className = `sidebar-status-value ${status === 'action' ? 'action' : status === 'warning' ? 'warning' : 'ok'}`;
+
+      // Build preview
+      let html = '';
+
+      // ① One Thing
+      html += `
+        <div class="one-thing">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div class="one-thing-icon">⚡</div>
+            <div>
+              <div class="one-thing-label">오늘 꼭 해야 할 일</div>
+              <div class="one-thing-text">${data.one_thing || '-'}</div>
+            </div>
+          </div>
+          <button class="one-thing-btn">지금 확인 →</button>
+        </div>
+      `;
+
+      // ② Signal Cards
+      const signals = data.signals || [];
+      const signalIcons = ['📈', '⚠️', '✅', '📦'];
+      html += '<div class="signals-grid">';
+      signals.forEach((s, i) => {
+        const state = (s.state || 'OK').toLowerCase();
+        html += `
+          <div class="card signal-card">
+            <div class="signal-card-header">
+              <div class="signal-icon ${state === 'action' ? 'action' : state === 'warning' ? 'warning' : 'ok'}">
+                ${signalIcons[i % signalIcons.length]}
+              </div>
+              <span class="signal-state">${s.state || 'OK'}</span>
+            </div>
+            <div class="signal-title">${s.title || '-'}</div>
+            <div class="signal-value">${s.value ?? '-'}</div>
+          </div>
+        `;
+      });
+      html += '</div>';
+
+      // ③ Bottom grid: History + Reasoning
+      html += '<div class="bottom-grid">';
+
+      // History
+      const history = data.history || [];
+      html += '<div class="card">';
+      html += '<div class="history-header"><span>📜</span> 최근 활동 기록</div>';
+      history.forEach(h => {
+        const hState = (h.state || 'OK').toLowerCase();
+        const badgeLabel = h.state === 'OK' ? '완료' : h.state === 'Warning' ? '주의' : h.state === 'Action' ? '조치' : h.state;
+        html += `
+          <div class="history-row">
+            <div class="history-row-left">
+              <span class="history-time">${h.time || '-'}</span>
+              <span class="history-event">${h.event || '-'}</span>
+            </div>
+            <span class="history-badge ${hState === 'action' ? 'action' : hState === 'warning' ? 'warning' : 'ok'}">
+              <span class="history-badge-dot"></span>
+              ${badgeLabel}
+            </span>
+          </div>
+        `;
+      });
+      html += '</div>';
+
+      // Reasoning
+      const reasoning = data.reasoning || {};
+      html += '<div class="card">';
+      html += '<div class="reasoning-header"><span>💡</span> 판단 근거</div>';
+      html += '<div class="reasoning-block">';
+      if(reasoning.coverage) {
+        html += `
+          <div class="reasoning-coverage">
+            <p>${reasoning.coverage}</p>
+          </div>
+        `;
+      }
+      if(reasoning.notes) {
+        html += `<p class="reasoning-notes">${reasoning.notes}</p>`;
+      }
+      html += '</div></div>';
+
+      html += '</div>'; // bottom-grid
+
+      // Footer
+      html += `
+        <div class="preview-footer">
+          <p>본 프리뷰 UI는 <strong>Launchrail Standard OS</strong>의 확정된 화면 사양이며, 시공 및 가격 산정의 기준으로 사용됩니다.</p>
+        </div>
+      `;
+
+      document.getElementById('previewContent').innerHTML = html;
+    }
+
+    function goBack() {
+      document.getElementById('inputMode').classList.remove('hidden');
+      document.getElementById('previewMode').classList.remove('active');
+      document.getElementById('btnBack').style.display = 'none';
+      document.getElementById('headerTitle').textContent = 'Preview Viewer';
+      document.getElementById('headerDot').style.display = 'none';
+      document.getElementById('headerHeadline').textContent = 'JSON을 입력하세요';
+      document.getElementById('sidebarStatus').textContent = '대기';
+      document.getElementById('sidebarStatus').className = 'sidebar-status-value idle';
+      document.getElementById('previewContent').innerHTML = '';
+    }
+  </script>
+
+</body>
+</html>
